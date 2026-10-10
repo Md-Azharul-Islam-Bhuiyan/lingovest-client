@@ -48,6 +48,7 @@ export const VocabularyFlashcard: React.FC<VocabularyFlashcardProps> = ({
   // Can be controlled or uncontrolled
   const [internalFlipped, setInternalFlipped] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [dynamicFallbackAttempted, setDynamicFallbackAttempted] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
   const isFlipped = controlledFlipped !== undefined ? controlledFlipped : internalFlipped;
@@ -72,12 +73,37 @@ export const VocabularyFlashcard: React.FC<VocabularyFlashcardProps> = ({
 
   const articleEmoji = article === 'der' ? '💙' : article === 'die' ? '💖' : article === 'das' ? '💚' : '📝';
 
-  const imageUrl = getVocabularyImage({
+  const defaultImageUrl = getVocabularyImage({
     word: item.word,
     meaningEn: item.meaningEn,
     topic: item.topic,
     imageUrl: item.imageUrl || undefined,
   });
+
+  const [currentImgSrc, setCurrentImgSrc] = useState(defaultImageUrl);
+
+  React.useEffect(() => {
+    setCurrentImgSrc(defaultImageUrl);
+    setImgError(false);
+    setDynamicFallbackAttempted(false);
+  }, [defaultImageUrl, item.id]);
+
+  const handleImageError = () => {
+    if (!dynamicFallbackAttempted && !currentImgSrc.includes('pollinations.ai')) {
+      const keyword = (item.meaningEn || item.word || '')
+        .replace(/^(the|a|an|to)\s+/i, '')
+        .replace(/[^a-zA-Z0-9\s]/g, '')
+        .trim();
+      if (keyword) {
+        setCurrentImgSrc(
+          `https://image.pollinations.ai/prompt/${encodeURIComponent('high quality photo of ' + keyword)}?width=600&height=400&nologo=true`
+        );
+        setDynamicFallbackAttempted(true);
+        return;
+      }
+    }
+    setImgError(true);
+  };
 
   return (
     <motion.div
@@ -103,10 +129,10 @@ export const VocabularyFlashcard: React.FC<VocabularyFlashcardProps> = ({
             <div className="relative h-48 sm:h-52 w-full overflow-hidden bg-gradient-to-tr from-violet-100 via-purple-50 to-pink-100">
               {!imgError ? (
                 <img
-                  src={imageUrl}
+                  src={currentImgSrc}
                   alt={item.word}
                   loading="lazy"
-                  onError={() => setImgError(true)}
+                  onError={handleImageError}
                   className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                   style={{
                     transform: isHovered ? 'scale(1.06)' : 'scale(1)',
