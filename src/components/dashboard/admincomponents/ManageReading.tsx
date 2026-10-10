@@ -1,0 +1,509 @@
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { useAppSelector } from '@/redux/hook';
+import { useCurrentUser } from '@/redux/features/authSlice';
+import { TCurrentUser } from '@/types/commonTypes';
+import CustomDropdown from '@/components/common/CustomDropdown';
+import {
+  useGetAllReadingQuery,
+  useDeleteReadingMutation,
+  useAiGenerateReadingMutation,
+} from '@/redux/api/readingApi';
+import {
+  Sparkles,
+  BookOpen,
+  Search,
+  Filter,
+  CheckCircle2,
+  Trash2,
+  X,
+  Loader2,
+  ChevronDown,
+  ChevronUp,
+  HelpCircle,
+  Languages,
+} from 'lucide-react';
+
+const CEFR_LEVELS = ['ALL', 'A1', 'A2', 'B1', 'B2', 'C1'];
+const POPULAR_TOPICS = [
+  'Ein Tag in Berlin',
+  'Einkaufen auf dem Markt',
+  'Im Restaurant bestellen',
+  'Eine Reise nach Hamburg',
+  'Wohnungssuche und Umzug',
+  'Beim Arzt',
+  'Ein Vorstellungsgespräch',
+];
+
+const ManageReading = () => {
+  const currentUser = useAppSelector(useCurrentUser) as TCurrentUser | null;
+  const userRole = (currentUser?.role || '').toUpperCase();
+  const isStaff = userRole === 'STAFF';
+
+  // Filters & Search
+  const [selectedLevel, setSelectedLevel] = useState('ALL');
+  const [selectedTopic, setSelectedTopic] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Modals & Expanders
+  const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
+  const [expandedStoryId, setExpandedStoryId] = useState<string | null>(null);
+
+  // AI Generation Form
+  const [genLevel, setGenLevel] = useState('A1');
+  const [genTopic, setGenTopic] = useState('Ein Tag in Berlin');
+  const [genCount, setGenCount] = useState(1);
+  const [customPrompt, setCustomPrompt] = useState('');
+
+  const queryParams = new URLSearchParams();
+  if (selectedLevel !== 'ALL') queryParams.append('level', selectedLevel);
+  if (selectedTopic) queryParams.append('topic', selectedTopic);
+  if (searchQuery.trim()) queryParams.append('searchTerm', searchQuery.trim());
+  queryParams.append('limit', '50');
+
+  const { data, isLoading, refetch } = useGetAllReadingQuery(queryParams.toString());
+  const [deleteReading] = useDeleteReadingMutation();
+  const [aiGenerateReading, { isLoading: isGenerating }] = useAiGenerateReadingMutation();
+
+  const passagesList = data?.data || [];
+  const totalCount = data?.meta?.total || passagesList.length;
+
+  const handleGenerateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isStaff) return;
+
+    try {
+      const res: any = await aiGenerateReading({
+        level: genLevel,
+        topic: genTopic,
+        count: Number(genCount),
+        customPrompt: customPrompt.trim() || undefined,
+      }).unwrap();
+
+      toast.success(res?.message || 'Generated reading story successfully!', {
+        duration: 4000,
+        icon: '✨',
+      });
+      setIsGenerateModalOpen(false);
+      refetch();
+    } catch (err: any) {
+      toast.error(err?.data?.message || 'Failed to generate reading story.');
+    }
+  };
+
+  const handleDelete = async (id: string, title: string) => {
+    if (!confirm(`Delete reading story "${title}"?`)) return;
+    try {
+      await deleteReading(id).unwrap();
+      toast.success(`Deleted "${title}"`);
+      refetch();
+    } catch (err: any) {
+      toast.error(err?.data?.message || 'Failed to delete passage');
+    }
+  };
+
+  const toggleExpand = (id: string) => {
+    setExpandedStoryId(expandedStoryId === id ? null : id);
+  };
+
+  return (
+    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
+      {/* Header Card */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+            <BookOpen className="w-7 h-7" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-slate-800">Reading Management</h1>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">
+                {totalCount} Stories
+              </span>
+            </div>
+            <p className="text-sm text-slate-500 mt-0.5">
+              CEFR-Graded Passages, Bilingual Summaries & Goethe-Style Comprehension Checks
+            </p>
+          </div>
+        </div>
+
+        {/* Action Button: Hidden for STAFF */}
+        {!isStaff && (
+          <button
+            id="ai-generate-reading-btn"
+            onClick={() => setIsGenerateModalOpen(true)}
+            className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-white font-medium bg-gradient-to-r from-sky-500 via-indigo-600 to-indigo-700 hover:from-sky-600 hover:to-indigo-700 shadow-md shadow-indigo-500/20 transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-sm"
+          >
+            <Sparkles className="w-4 h-4 animate-spin text-indigo-200" style={{ animationDuration: '3s' }} />
+            <span>✨ AI Generate Reading Story & Questions</span>
+          </button>
+        )}
+      </div>
+
+      {/* Filter and Search Bar */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 space-y-3">
+        <div className="flex flex-col md:flex-row items-center gap-3">
+          <div className="relative flex-1 w-full">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search by story title, German text, or topic..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+            />
+          </div>
+
+          {/* Topic Filter */}
+          <div className="w-full md:w-auto">
+            <CustomDropdown
+              value={selectedTopic}
+              onChange={setSelectedTopic}
+              options={POPULAR_TOPICS}
+              placeholder="All Topics"
+              label="Topic"
+              headerTitle="Reading Topics"
+              theme="indigo"
+              icon={<BookOpen className="w-3.5 h-3.5" />}
+              searchable={true}
+              className="w-full md:w-auto"
+              triggerClassName="w-full md:w-64 py-2 px-3 bg-white"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+          <span className="text-slate-400 font-medium flex items-center gap-1 shrink-0">
+            <Filter className="w-3.5 h-3.5" /> CEFR Level:
+          </span>
+          {CEFR_LEVELS.map((lvl) => (
+            <button
+              key={lvl}
+              onClick={() => setSelectedLevel(lvl)}
+              className={`px-3 py-1 rounded-lg font-medium transition-all shrink-0 ${
+                selectedLevel === lvl
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {lvl}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Stories Listing */}
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+          <p className="text-sm text-slate-500">Loading reading passages...</p>
+        </div>
+      ) : passagesList.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+            <BookOpen className="w-8 h-8" />
+          </div>
+          <h3 className="text-lg font-semibold text-slate-700">No Reading Passages Found</h3>
+          <p className="text-sm text-slate-500 mt-1 max-w-md mx-auto">
+            {isStaff
+              ? 'No reading passages match your selected filters.'
+              : 'Click "AI Generate Reading Story & Questions" above to produce authentic CEFR stories with Goethe-style questions!'}
+          </p>
+          {!isStaff && (
+            <button
+              onClick={() => setIsGenerateModalOpen(true)}
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
+            >
+              <Sparkles className="w-4 h-4" /> Generate Story
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {passagesList.map((passage: any) => {
+            const isExpanded = expandedStoryId === passage.id;
+            const questions = Array.isArray(passage.questions) ? passage.questions : [];
+
+            return (
+              <div
+                key={passage.id}
+                className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all overflow-hidden"
+              >
+                {/* Passage Header Row */}
+                <div className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-0.5 rounded-md text-xs font-bold bg-indigo-100 text-indigo-800">
+                        {passage.level}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-600">
+                        {passage.topic}
+                      </span>
+                      <span className="text-xs text-slate-400 font-mono">
+                        slug: /{passage.slug}
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-800">{passage.title}</h3>
+                  </div>
+
+                  <div className="flex items-center gap-2 self-end md:self-center">
+                    <button
+                      onClick={() => toggleExpand(passage.id)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-medium transition-colors"
+                    >
+                      {isExpanded ? (
+                        <>
+                          <span>Collapse</span>
+                          <ChevronUp className="w-4 h-4" />
+                        </>
+                      ) : (
+                        <>
+                          <span>Read & Inspect Questions ({questions.length})</span>
+                          <ChevronDown className="w-4 h-4" />
+                        </>
+                      )}
+                    </button>
+
+                    {!isStaff && (
+                      <button
+                        onClick={() => handleDelete(passage.id, passage.title)}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
+                        title="Delete passage"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Expanded Details Panel */}
+                {isExpanded && (
+                  <div className="border-t border-slate-100 p-5 bg-slate-50/50 space-y-6">
+                    {/* German Passage Content */}
+                    <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-inner">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-600 mb-2 flex items-center gap-1.5">
+                        <BookOpen className="w-4 h-4" /> German Reading Passage ({passage.level})
+                      </h4>
+                      <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-line font-serif text-justify">
+                        {passage.contentGerman}
+                      </p>
+                    </div>
+
+                    {/* Bilingual Summaries */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-white rounded-xl p-4 border border-slate-200">
+                        <h5 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 flex items-center gap-1">
+                          <Languages className="w-3.5 h-3.5" /> English Summary
+                        </h5>
+                        <p className="text-xs text-slate-700 leading-relaxed">{passage.summaryEn}</p>
+                      </div>
+
+                      <div className="bg-white rounded-xl p-4 border border-slate-200">
+                        <h5 className="text-xs font-bold uppercase tracking-wider text-orange-500 mb-1 flex items-center gap-1">
+                          <Languages className="w-3.5 h-3.5" /> Bengali Summary (বাংলা)
+                        </h5>
+                        <p className="text-xs text-slate-800 leading-relaxed">{passage.summaryBn}</p>
+                      </div>
+                    </div>
+
+                    {/* Goethe-Style Comprehension Checks */}
+                    <div className="bg-white rounded-xl p-5 border border-slate-200">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-600 mb-3 flex items-center gap-1.5">
+                        <HelpCircle className="w-4 h-4" /> Goethe-Style Comprehension Checks ({questions.length} Questions)
+                      </h4>
+
+                      <div className="space-y-4">
+                        {questions.map((q: any, idx: number) => (
+                          <div key={q.id || idx} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                            <p className="font-semibold text-slate-800 mb-2">
+                              {idx + 1}. {q.question}
+                            </p>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+                              {(q.options || []).map((opt: string, optIdx: number) => {
+                                const isCorrect = opt === q.correctAnswer;
+                                return (
+                                  <div
+                                    key={optIdx}
+                                    className={`p-2 rounded-lg border text-xs font-medium ${
+                                      isCorrect
+                                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold'
+                                        : 'bg-white text-slate-600 border-slate-200'
+                                    }`}
+                                  >
+                                    <span className="opacity-70 mr-1.5">
+                                      {String.fromCharCode(65 + optIdx)})
+                                    </span>
+                                    {opt} {isCorrect && '✓ (Correct)'}
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            {q.explanationBn && (
+                              <p className="text-slate-600 bg-amber-50/80 border border-amber-200/60 p-2 rounded-lg">
+                                <span className="font-semibold text-amber-800">ব্যাখ্যা:</span> {q.explanationBn}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* AI GENERATION MODAL */}
+      {!isStaff && isGenerateModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 relative">
+            <button
+              onClick={() => !isGenerating && setIsGenerateModalOpen(false)}
+              className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 p-1"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">AI Generate Reading Story</h2>
+                <p className="text-xs text-slate-500">
+                  CEFR-Graded Passages with Unique (slug, level) Constraint
+                </p>
+              </div>
+            </div>
+
+            {/* Zero-Duplicate Callout */}
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 mb-4 flex items-start gap-2.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <div className="text-xs text-emerald-800 leading-relaxed">
+                <span className="font-semibold">Zero-Duplicate Pipeline:</span> Database pre-query injects existing titles as prompt exclusion, backed by unique constraint <code className="bg-emerald-100/70 px-1 py-0.5 rounded text-[11px]">(slug, level)</code>.
+              </div>
+            </div>
+
+            <form onSubmit={handleGenerateSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    CEFR Level *
+                  </label>
+                  <CustomDropdown
+                    value={genLevel}
+                    onChange={setGenLevel}
+                    options={['A1', 'A2', 'B1', 'B2', 'C1']}
+                    placeholder="Select Level"
+                    label="Level"
+                    theme="indigo"
+                    headerTitle="Choose CEFR Level"
+                    allowClear={false}
+                    className="w-full"
+                    triggerClassName="w-full py-2 px-3 bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Story Count *
+                  </label>
+                  <CustomDropdown
+                    value={String(genCount)}
+                    onChange={(val) => setGenCount(Number(val))}
+                    options={[
+                      { value: '1', label: '1 Story' },
+                      { value: '2', label: '2 Stories' },
+                      { value: '3', label: '3 Stories' },
+                    ]}
+                    placeholder="Count"
+                    label="Count"
+                    theme="indigo"
+                    headerTitle="Stories to Generate"
+                    allowClear={false}
+                    className="w-full"
+                    triggerClassName="w-full py-2 px-3 bg-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Topic / Theme *
+                </label>
+                <input
+                  type="text"
+                  value={genTopic}
+                  onChange={(e) => setGenTopic(e.target.value)}
+                  placeholder="e.g. Eine Reise nach München"
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  required
+                />
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {POPULAR_TOPICS.slice(0, 4).map((top) => (
+                    <button
+                      type="button"
+                      key={top}
+                      onClick={() => setGenTopic(top)}
+                      className="px-2 py-0.5 rounded text-[11px] bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 transition-colors"
+                    >
+                      {top}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Custom Guidance (Optional)
+                </label>
+                <textarea
+                  rows={2}
+                  value={customPrompt}
+                  onChange={(e) => setCustomPrompt(e.target.value)}
+                  placeholder="e.g. Focus on past tense Perfekt, dialogue between two friends at a train station..."
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  disabled={isGenerating}
+                  onClick={() => setIsGenerateModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 text-sm font-medium"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isGenerating}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white font-medium bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 shadow-md shadow-indigo-500/20 text-sm transition-all disabled:opacity-50"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Generating Story & Questions...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>Generate Now</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ManageReading;
