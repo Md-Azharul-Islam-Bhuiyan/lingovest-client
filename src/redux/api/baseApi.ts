@@ -76,15 +76,6 @@ const baseQueryWithRefreshToken: BaseQueryFn<
     }
   }
 
-  if (result?.error) {
-    const errorMessage = (result.error.data as any)?.message;
-    toast.error(errorMessage || 'Something went wrong', {
-      position: 'top-right',
-      duration: 1500,
-      icon: '🚨',
-    });
-  }
-
   if (result?.error?.status === 401) {
     const response = await fetch(refreshTokenUrl, {
       method: 'POST',
@@ -114,6 +105,15 @@ const baseQueryWithRefreshToken: BaseQueryFn<
     } else {
       api.dispatch(logout());
     }
+  }
+
+  if (result?.error) {
+    const errorMessage = (result.error.data as any)?.message;
+    toast.error(errorMessage || 'Something went wrong', {
+      position: 'top-right',
+      duration: 1500,
+      icon: '🚨',
+    });
   }
 
   return result;
