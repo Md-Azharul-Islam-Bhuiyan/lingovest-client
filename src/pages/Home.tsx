@@ -18,6 +18,7 @@ import {
   Heart,
 } from 'lucide-react';
 import ScrollToTop from '@/components/ui/ToTop';
+import VocabularyFlashcard from '@/components/vocabulary/VocabularyFlashcard';
 
 const CEFR_TABS = [
   {
@@ -304,96 +305,46 @@ const Home = () => {
               </div>
             </motion.div>
 
-            {/* Right Column: Interactive Flashcard */}
+            {/* Right Column: Interactive Flashcard Showcase */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.7, delay: 0.3 }}
-              className="lg:col-span-5"
+              className="lg:col-span-5 flex flex-col items-center"
             >
-              <div className="relative mx-auto max-w-md lg:max-w-none">
-                {/* Decorative ring */}
-                <div className="absolute -inset-2 bg-gradient-to-r from-violet-400 via-pink-400 to-amber-400 rounded-[32px] opacity-20 blur-md" />
+              <div className="w-full max-w-sm sm:max-w-md space-y-4">
+                <div className="relative">
+                  {/* Decorative glowing back-ring */}
+                  <div className="absolute -inset-3 bg-gradient-to-r from-violet-500 via-pink-500 to-amber-400 rounded-[34px] opacity-25 blur-lg pointer-events-none" />
+                  
+                  <VocabularyFlashcard
+                    item={{
+                      id: 'hero-apple-card',
+                      word: 'Apfel',
+                      article: 'der',
+                      plural: 'Äpfel',
+                      level: 'A1',
+                      topic: 'Kapitel 4: Guten Appetit!',
+                      meaningEn: 'apple',
+                      meaningBn: 'আপেল',
+                      exampleGerman: 'Ich esse jeden Morgen einen frischen Apfel.',
+                      exampleTranslationEn: 'I eat a fresh apple every morning.',
+                      exampleTranslationBn: 'আমি প্রতিদিন সকালে একটি তাজা আপেল খাই।',
+                      partOfSpeech: 'Noun',
+                    }}
+                    playSpeech={playSpeech}
+                  />
+                </div>
 
-                <div className="relative bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 border-2 border-violet-200 shadow-2xl space-y-5 sm:space-y-6">
-                  {/* Card header with colored dots */}
-                  <div className="flex items-center justify-between pb-4 border-b-2 border-violet-100">
-                    <div className="flex items-center gap-2">
-                      <span className="w-3.5 h-3.5 rounded-full bg-rose-400 shadow-sm" />
-                      <span className="w-3.5 h-3.5 rounded-full bg-amber-400 shadow-sm" />
-                      <span className="w-3.5 h-3.5 rounded-full bg-green-400 shadow-sm" />
-                      <span className="ml-2 text-xs font-extrabold text-violet-500">
-                        🔊 Live Pronunciation Card
-                      </span>
-                    </div>
-                    <span className="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-700">
-                      🌱 A1
-                    </span>
-                  </div>
-
-                  {/* Word */}
-                  <div className="space-y-2">
-                    <div className="flex items-baseline gap-3">
-                      <motion.span
-                        whileHover={{ scale: 1.1 }}
-                        className="px-3 py-1 rounded-xl text-sm font-black uppercase bg-blue-100 text-blue-700 border-2 border-blue-200 cursor-default"
-                      >
-                        DER
-                      </motion.span>
-                      <h3 className="text-4xl font-display font-extrabold text-slate-900 tracking-tight">
-                        Apfel
-                      </h3>
-                      <span className="text-2xl">🍎</span>
-                    </div>
-                    <p className="text-xs text-slate-500 font-bold">
-                      Plural: <span className="font-extrabold text-slate-700">die Äpfel</span>
-                    </p>
-                  </div>
-
-                  {/* Example sentence */}
-                  <div className="p-4 rounded-2xl bg-gradient-to-r from-violet-50 to-pink-50 border-2 border-violet-100 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-extrabold text-violet-500 uppercase tracking-wider">
-                        ✏️ Example Sentence
-                      </span>
-                      <motion.button
-                        whileHover={{ scale: 1.15 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => playSpeech('Ich esse jeden Morgen einen frischen Apfel.')}
-                        className="p-2 rounded-xl bg-gradient-to-r from-violet-500 to-purple-500 text-white hover:from-violet-600 hover:to-purple-600 transition-colors shadow-md shadow-violet-500/30"
-                        title="Play German Speech"
-                      >
-                        <Volume2 className="w-4 h-4" />
-                      </motion.button>
-                    </div>
-                    <p className="text-sm font-bold text-slate-900 italic">
-                      "Ich esse jeden Morgen einen frischen Apfel."
-                    </p>
-                    <p className="text-xs text-slate-600 font-semibold">
-                      → আমি প্রতিদিন সকালে একটি তাজা আপেল খাই। 🍏
-                    </p>
-                  </div>
-
-                  {/* Action row */}
-                  <div className="pt-2 flex items-center justify-between">
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => playSpeech('der Apfel')}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-extrabold bg-gradient-to-r from-slate-800 to-slate-900 text-white hover:from-slate-900 hover:to-black transition-all shadow-md"
-                    >
-                      <Volume2 className="w-4 h-4 text-amber-400" />
-                      <span>Listen 🔊</span>
-                    </motion.button>
-
-                    <Link
-                      to="/vocabulary"
-                      className="text-xs font-extrabold text-violet-600 hover:text-violet-700 flex items-center gap-1 group"
-                    >
-                      <span>100+ Words</span>
-                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                    </Link>
-                  </div>
+                {/* Explore Deck Link */}
+                <div className="text-center pt-1">
+                  <Link
+                    to="/vocabulary"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/90 hover:bg-white text-violet-700 font-extrabold text-xs shadow-md border border-violet-100 hover:border-violet-300 transition-all hover:scale-105 group"
+                  >
+                    <span>🎴 Explore All 100+ Vocabulary Flashcards</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-violet-500 group-hover:translate-x-1 transition-transform" />
+                  </Link>
                 </div>
               </div>
             </motion.div>

@@ -1,19 +1,21 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useGetAllVocabularyQuery, useGetVocabularyTopicsQuery } from '@/redux/api/vocabularyApi';
 import { useCurrentUser } from '@/redux/features/authSlice';
 import { useAppSelector } from '@/redux/hook';
 import { AuthRequiredGate } from '@/components/common/AuthRequiredGate';
 import CustomDropdown from '@/components/common/CustomDropdown';
+import VocabularyFlashcard from '@/components/vocabulary/VocabularyFlashcard';
 import {
   BookOpen,
-  Volume2,
-  Volume1,
   Search,
   Filter,
   Sparkles,
   Star,
   X,
+  RotateCw,
+  Layers,
+  HelpCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -49,6 +51,7 @@ const LearnerVocabulary = () => {
   const [selectedLevel, setSelectedLevel] = useState('ALL');
   const [selectedTopic, setSelectedTopic] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [flippedMap, setFlippedMap] = useState<Record<string, boolean>>({});
 
   const { data: topicsData } = useGetVocabularyTopicsQuery(undefined);
   const availableTopics: string[] = (topicsData?.data && topicsData.data.length > 0)
@@ -79,10 +82,27 @@ const LearnerVocabulary = () => {
     }
   };
 
+  const handleToggleFlip = (id: string) => {
+    setFlippedMap((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  const handleFlipAll = (flipToBack: boolean) => {
+    const updated: Record<string, boolean> = {};
+    words.forEach((w: any) => {
+      updated[w.id] = flipToBack;
+    });
+    setFlippedMap(updated);
+  };
+
+  const flippedCount = words.filter((w: any) => flippedMap[w.id]).length;
+
   return (
     <AuthRequiredGate
-      featureTitle="German Vocabulary & Pronunciation Deck"
-      featureSubtitle="Curated German vocabulary with gender articles (der, die, das), plural forms, dual-speed native audio pronunciation, and authentic Bengali & English translations."
+      featureTitle="German Vocabulary & Flashcard Deck"
+      featureSubtitle="Interactive German vocabulary flashcards with visual pictures, gender articles (der, die, das), native audio pronunciations, and tap-to-reveal Bengali & English meanings with Beispielsätze (example sentences)."
     >
       <div className="py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8 min-h-screen">
         {/* Hero Header */}
@@ -95,19 +115,22 @@ const LearnerVocabulary = () => {
           <div className="relative z-10 space-y-3 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-md text-white text-xs font-extrabold uppercase tracking-wider">
               <Star className="w-4 h-4 text-amber-300 fill-amber-300" />
-              Wortschatz Deck (CEFR A1–C2)
+              Wortschatz Flashcard Deck (CEFR A1–C2)
             </div>
-            <h1 className="text-3xl sm:text-4xl font-display font-extrabold tracking-tight">
-              📚 Vocabulary & Pronunciation
+            <h1 className="text-3xl sm:text-4xl font-display font-extrabold tracking-tight flex items-center gap-2.5 flex-wrap">
+              <span>🃏 Vocabulary Flashcards</span>
+              <span className="text-xl sm:text-2xl px-3 py-1 rounded-full bg-white/25 text-white backdrop-blur-sm font-black">
+                Interactive
+              </span>
             </h1>
-            <p className="text-white/80 text-sm sm:text-base leading-relaxed font-semibold">
-              Learn German words with articles (<span className="text-blue-200 font-extrabold">der</span>, <span className="text-pink-200 font-extrabold">die</span>, <span className="text-green-200 font-extrabold">das</span>), plurals, native audio 🔊, and Bengali translations!
+            <p className="text-white/90 text-sm sm:text-base leading-relaxed font-semibold">
+              Every card has a picture, gender article (<span className="text-blue-200 font-extrabold">der</span>, <span className="text-pink-200 font-extrabold">die</span>, <span className="text-emerald-200 font-extrabold">das</span>), and native German audio 🔊. <strong className="text-amber-200 underline decoration-amber-300">Click any card</strong> to flip and reveal its authentic Meaning and Beispielsatz!
             </p>
           </div>
 
           {/* Decorative elements */}
           <div className="absolute -top-16 -right-16 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-          <motion.div animate={{ y: [0, -15, 0] }} transition={{ duration: 5, repeat: Infinity }} className="absolute top-6 right-10 text-3xl opacity-20">📖</motion.div>
+          <motion.div animate={{ y: [0, -15, 0] }} transition={{ duration: 5, repeat: Infinity }} className="absolute top-6 right-10 text-3xl opacity-20">🎴</motion.div>
           <motion.div animate={{ y: [0, 10, 0] }} transition={{ duration: 6, repeat: Infinity, delay: 1 }} className="absolute bottom-6 right-32 text-2xl opacity-15">✨</motion.div>
         </motion.div>
 
@@ -118,12 +141,13 @@ const LearnerVocabulary = () => {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="bg-white rounded-[24px] p-4 sm:p-6 border-2 border-violet-100 shadow-playful space-y-4"
         >
+          {/* Search + Topic Dropdown */}
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <div className="relative flex-1 w-full">
               <Search className="w-4 h-4 text-violet-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="🔍 Search by German word, English, or Bengali (বাংলা)..."
+                placeholder="🔍 Search German word, English, or Bengali (বাংলা)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 text-sm font-semibold rounded-xl border-2 border-violet-200 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 bg-violet-50/30 placeholder:text-slate-400"
@@ -147,31 +171,65 @@ const LearnerVocabulary = () => {
             </div>
           </div>
 
-          {/* CEFR Level Chips */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-            <span className="text-violet-400 font-extrabold uppercase tracking-wider shrink-0 flex items-center gap-1">
-              <Filter className="w-3 h-3" /> Level:
-            </span>
-            {CEFR_LEVELS.map((lvl) => (
-              <motion.button
-                key={lvl}
-                whileHover={{ scale: 1.08 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setSelectedLevel(lvl)}
-                className={`px-4 py-2 rounded-xl font-extrabold transition-all shrink-0 flex items-center gap-1.5 ${
-                  selectedLevel === lvl
-                    ? 'bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-md shadow-violet-500/30'
-                    : 'bg-violet-50 text-slate-600 hover:bg-violet-100 border border-violet-100'
-                }`}
-              >
-                <span>{LEVEL_EMOJIS[lvl]}</span>
-                {lvl}
-              </motion.button>
-            ))}
-            <span className="ml-auto text-violet-500 font-extrabold shrink-0 flex items-center gap-1">
-              <Sparkles className="w-3 h-3" />
-              {totalCount} Words
-            </span>
+          {/* CEFR Level Chips + Flashcard Deck Actions */}
+          <div className="flex items-center justify-between gap-3 flex-wrap pt-1 border-t border-violet-50">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs flex-1 min-w-[280px]">
+              <span className="text-violet-400 font-extrabold uppercase tracking-wider shrink-0 flex items-center gap-1">
+                <Filter className="w-3 h-3" /> Level:
+              </span>
+              {CEFR_LEVELS.map((lvl) => (
+                <motion.button
+                  key={lvl}
+                  whileHover={{ scale: 1.06 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setSelectedLevel(lvl)}
+                  className={`px-3.5 py-1.5 rounded-xl font-extrabold transition-all shrink-0 flex items-center gap-1.5 ${
+                    selectedLevel === lvl
+                      ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-md shadow-violet-500/30'
+                      : 'bg-violet-50 text-slate-600 hover:bg-violet-100 border border-violet-100'
+                  }`}
+                >
+                  <span>{LEVEL_EMOJIS[lvl]}</span>
+                  {lvl}
+                </motion.button>
+              ))}
+            </div>
+
+            {/* Flashcard Study Deck Controls */}
+            <div className="flex items-center gap-2 shrink-0">
+              {words.length > 0 && (
+                <div className="flex items-center gap-1 bg-violet-50 p-1 rounded-xl border border-violet-200 text-xs">
+                  <button
+                    onClick={() => handleFlipAll(false)}
+                    className={`px-2.5 py-1 rounded-lg font-extrabold transition-all ${
+                      flippedCount === 0
+                        ? 'bg-white text-violet-700 shadow-sm border border-violet-100'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                    title="Show German front side on all cards"
+                  >
+                    🇩🇪 Words
+                  </button>
+                  <button
+                    onClick={() => handleFlipAll(true)}
+                    className={`px-2.5 py-1 rounded-lg font-extrabold transition-all flex items-center gap-1 ${
+                      flippedCount > 0 && flippedCount === words.length
+                        ? 'bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-sm'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                    title="Flip all cards to reveal meaning & beispielsatz"
+                  >
+                    <RotateCw className="w-3 h-3" />
+                    <span>Flip All</span>
+                  </button>
+                </div>
+              )}
+
+              <span className="text-violet-600 font-extrabold shrink-0 flex items-center gap-1.5 text-xs bg-violet-100/80 px-3 py-1.5 rounded-xl border border-violet-200">
+                <Layers className="w-3.5 h-3.5 text-violet-500" />
+                <span>{totalCount} Cards</span>
+              </span>
+            </div>
           </div>
 
           {/* Active Filter Indicators */}
@@ -232,15 +290,23 @@ const LearnerVocabulary = () => {
           )}
         </motion.div>
 
-        {/* Vocabulary Card Grid */}
+        {/* Tip Banner */}
+        <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-amber-50 border border-amber-200/80 text-amber-900 text-xs font-bold">
+          <HelpCircle className="w-4 h-4 text-amber-600 shrink-0" />
+          <span>
+            💡 <strong>Flashcard Tip:</strong> Click any card to flip it over! The front shows the German word with its photo and pronunciation; the back reveals its meaning and an authentic Beispielsatz (example sentence).
+          </span>
+        </div>
+
+        {/* Vocabulary Flashcard Grid */}
         {isLoading ? (
-          <div className="py-20 flex flex-col items-center justify-center space-y-4">
+          <div className="py-24 flex flex-col items-center justify-center space-y-4">
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
               className="w-12 h-12 border-4 border-violet-500 border-t-transparent rounded-full"
             />
-            <p className="text-sm font-bold text-violet-500">Loading vocabulary deck... 📚</p>
+            <p className="text-sm font-bold text-violet-500">Loading your vocabulary flashcards... 🎴</p>
           </div>
         ) : words.length === 0 ? (
           <motion.div
@@ -249,131 +315,23 @@ const LearnerVocabulary = () => {
             className="bg-white rounded-[28px] p-12 text-center border-2 border-violet-100 shadow-playful space-y-3"
           >
             <div className="text-5xl mb-2">🔍</div>
-            <h3 className="text-lg font-display font-extrabold text-slate-800">No Words Found</h3>
+            <h3 className="text-lg font-display font-extrabold text-slate-800">No Flashcards Found</h3>
             <p className="text-sm text-slate-500 max-w-md mx-auto font-semibold">
-              Try a different CEFR level or search keyword!
+              Try selecting a different CEFR level or searching for another German word!
             </p>
           </motion.div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {words.map((item: any, idx: number) => {
-              const article = item.article ? item.article.toLowerCase() : '';
-              const articleStyle =
-                article === 'der'
-                  ? 'bg-blue-100 text-blue-700 border-blue-300'
-                  : article === 'die'
-                  ? 'bg-pink-100 text-pink-700 border-pink-300'
-                  : article === 'das'
-                  ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
-                  : 'bg-slate-100 text-slate-700 border-slate-200';
-
-              const articleEmoji = article === 'der' ? '💙' : article === 'die' ? '💖' : article === 'das' ? '💚' : '📝';
-
-              return (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: Math.min(idx * 0.05, 0.5) }}
-                  className="card-playful p-5 flex flex-col justify-between space-y-4 group"
-                >
-                  <div>
-                    {/* Top Badges */}
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5">
-                        {item.article && (
-                          <span className={`px-2.5 py-1 rounded-xl text-xs font-extrabold uppercase border-2 ${articleStyle} flex items-center gap-1`}>
-                            <span>{articleEmoji}</span>
-                            {item.article}
-                          </span>
-                        )}
-                        <span className="px-2 py-1 rounded-xl text-xs font-bold bg-violet-100 text-violet-600 border border-violet-200">
-                          {LEVEL_EMOJIS[item.level] || '📊'} {item.level}
-                        </span>
-                      </div>
-
-                      <span className="text-[11px] font-bold text-slate-400 truncate max-w-[130px]">
-                        {item.topic}
-                      </span>
-                    </div>
-
-                    {/* German Word */}
-                    <div className="mt-3 flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="text-xl font-display font-extrabold text-slate-900 group-hover:text-violet-600 transition-colors">
-                          {item.word}
-                        </h3>
-                        {item.plural && (
-                          <p className="text-xs font-bold text-slate-500 mt-0.5">
-                            Plural: <span className="text-slate-700">{item.plural}</span>
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Audio buttons */}
-                      <div className="flex items-center gap-1 shrink-0">
-                        <motion.button
-                          whileHover={{ scale: 1.15 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => playSpeech(item.word, 1.0)}
-                          title="Normal Speed 🔊"
-                          className="p-2.5 rounded-xl bg-violet-100 hover:bg-violet-200 text-violet-600 transition-colors"
-                        >
-                          <Volume2 className="w-4 h-4" />
-                        </motion.button>
-                        <motion.button
-                          whileHover={{ scale: 1.15 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => playSpeech(item.word, 0.7)}
-                          title="Slow Speed 🐢"
-                          className="p-2.5 rounded-xl bg-slate-100 hover:bg-violet-100 text-slate-500 hover:text-violet-600 transition-colors"
-                        >
-                          <Volume1 className="w-4 h-4" />
-                        </motion.button>
-                      </div>
-                    </div>
-
-                    {/* Meanings */}
-                    <div className="mt-4 pt-3 border-t-2 border-violet-50 space-y-1.5">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-[11px] font-extrabold text-blue-500 uppercase w-6">EN</span>
-                        <p className="text-sm font-bold text-slate-800">{item.meaningEn}</p>
-                      </div>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-[11px] font-extrabold text-emerald-600 uppercase w-6">বাংলা</span>
-                        <p className="text-sm font-semibold text-emerald-900">{item.meaningBn}</p>
-                      </div>
-                    </div>
-
-                    {/* Example Sentence */}
-                    {item.exampleGerman && (
-                      <div className="mt-4 p-3.5 rounded-xl bg-gradient-to-r from-violet-50 to-pink-50 border-2 border-violet-100 space-y-1.5 text-xs">
-                        <div className="flex items-center justify-between">
-                          <span className="font-extrabold text-violet-500 uppercase text-[10px]">✏️ Beispielsatz</span>
-                          <motion.button
-                            whileHover={{ scale: 1.2 }}
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => playSpeech(item.exampleGerman, 0.9)}
-                            className="text-violet-600 hover:text-violet-700 p-1"
-                          >
-                            <Volume2 className="w-3.5 h-3.5" />
-                          </motion.button>
-                        </div>
-                        <p className="text-slate-900 font-bold italic">"{item.exampleGerman}"</p>
-                        {item.exampleTranslationBn && (
-                          <p className="text-slate-600 text-[11px] font-semibold">→ {item.exampleTranslationBn}</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="pt-2 flex items-center justify-between text-[11px] font-bold text-slate-400">
-                    <span>📝 {item.partOfSpeech || 'Word'}</span>
-                    <span className="text-violet-500 font-extrabold">CEFR {item.level}</span>
-                  </div>
-                </motion.div>
-              );
-            })}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7">
+            {words.map((item: any, idx: number) => (
+              <VocabularyFlashcard
+                key={item.id}
+                item={item}
+                index={idx}
+                flipped={Boolean(flippedMap[item.id])}
+                onToggleFlip={handleToggleFlip}
+                playSpeech={playSpeech}
+              />
+            ))}
           </div>
         )}
       </div>
