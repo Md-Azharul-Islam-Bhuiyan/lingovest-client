@@ -108,12 +108,20 @@ const baseQueryWithRefreshToken: BaseQueryFn<
   }
 
   if (result?.error) {
-    const errorMessage = (result.error.data as any)?.message;
-    toast.error(errorMessage || 'Something went wrong', {
-      position: 'top-right',
-      duration: 1500,
-      icon: '🚨',
-    });
+    const isGetRequest =
+      typeof args === 'string' ||
+      !args.method ||
+      args.method.toUpperCase() === 'GET';
+
+    // Do not show intrusive sirens for background queries (e.g. logos) or unauthenticated guest requests
+    if (!isGetRequest && result.error.status !== 401) {
+      const errorMessage = (result.error.data as any)?.message;
+      toast.error(errorMessage || 'Something went wrong', {
+        position: 'top-right',
+        duration: 1500,
+        icon: '🚨',
+      });
+    }
   }
 
   return result;
