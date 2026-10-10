@@ -66,7 +66,7 @@ const AdminOverview = () => {
               <span>Goethe-Zertifikat & CEFR Aligned Curriculum</span>
             </div>
             <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-              DeutschLernen Management Hub
+              LingoVest Management Hub
             </h1>
             <p className="text-sm md:text-base text-slate-300">
               Modular AI content generation engine and zero-duplicate pedagogical architecture for German language learners.

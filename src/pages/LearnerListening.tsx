@@ -199,7 +199,7 @@ const LearnerListening = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: Math.min(itemIdx * 0.1, 0.4) }}
-                  className="card-playful overflow-hidden p-6 space-y-6"
+                  className="card-playful overflow-hidden p-4 sm:p-6 space-y-5 sm:space-y-6"
                 >
                   {/* Header */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b-2 border-teal-100">

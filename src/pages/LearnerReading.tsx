@@ -162,17 +162,17 @@ const LearnerReading = () => {
                   className="card-playful overflow-hidden"
                 >
                   {/* Header */}
-                  <div className="p-5 sm:p-6 bg-gradient-to-r from-blue-50 to-indigo-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-2 border-blue-100">
+                  <div className="p-4 sm:p-6 bg-gradient-to-r from-blue-50 to-indigo-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b-2 border-blue-100">
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-2">
-                        <span className="px-3 py-1 rounded-xl text-xs font-extrabold bg-blue-100 text-blue-700 border border-blue-200 flex items-center gap-1">
+                        <span className="px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-xl text-xs font-extrabold bg-blue-100 text-blue-700 border border-blue-200 flex items-center gap-1">
                           {LEVEL_EMOJIS[story.level] || '📊'} {story.level}
                         </span>
                         <span className="text-xs font-bold text-slate-400">
                           📁 {story.topic}
                         </span>
                       </div>
-                      <h2 className="text-xl font-display font-extrabold text-slate-900">{story.title}</h2>
+                      <h2 className="text-lg sm:text-xl font-display font-extrabold text-slate-900">{story.title}</h2>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -180,7 +180,7 @@ const LearnerReading = () => {
                         whileHover={{ scale: 1.08 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => playSpeech(story.contentGerman)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-extrabold bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
                       >
                         <Volume2 className="w-3.5 h-3.5" />
                         <span>🔊 Listen</span>
@@ -189,7 +189,7 @@ const LearnerReading = () => {
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                         onClick={() => setExpandedId(isExpanded ? null : story.id)}
-                        className="p-2 rounded-xl text-slate-400 hover:bg-blue-100 hover:text-blue-600 transition-colors"
+                        className="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:bg-blue-100 hover:text-blue-600 transition-colors"
                       >
                         {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                       </motion.button>
@@ -197,7 +197,7 @@ const LearnerReading = () => {
                   </div>
 
                   {/* Content */}
-                  <div className="p-5 sm:p-6 space-y-6">
+                  <div className="p-4 sm:p-6 space-y-5 sm:space-y-6">
                     <div className="p-5 rounded-2xl bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-200/50 text-slate-800 leading-relaxed text-base whitespace-pre-line font-medium">
                       {story.contentGerman}
                     </div>

@@ -38,7 +38,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
       >
         <img
           src={activeUrl}
-          alt="DeutschLernen"
+          alt="LingoVest"
           onError={() => setImageError(true)}
           className={`w-full h-full object-contain ${imgClassName}`}
         />

@@ -136,7 +136,7 @@ const StaffDashboard = () => {
                   {activeLogoUrl ? (
                     <img
                       src={activeLogoUrl}
-                      alt="DeutschLernen"
+                      alt="LingoVest"
                       className="w-full h-full object-contain"
                     />
                   ) : (
@@ -145,7 +145,7 @@ const StaffDashboard = () => {
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-slate-900 leading-tight">
-                    DeutschLernen
+                    LingoVest
                   </h2>
                   <span className="text-[11px] font-bold text-emerald-600 tracking-wider uppercase">
                     Staff Editorial Portal

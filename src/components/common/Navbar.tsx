@@ -66,42 +66,42 @@ const Navbar = () => {
 
   return (
     <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b-2 border-violet-100 shadow-sm transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[68px] flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-[68px] flex items-center justify-between gap-2 sm:gap-4">
         {/* Brand Logo — Playful */}
-        <Link to="/" className="flex items-center gap-3 group shrink-0 py-3">
+        <Link to="/" className="flex items-center gap-2 sm:gap-3 group shrink-0 py-2 sm:py-3">
           <motion.div
             whileHover={{ rotate: [0, -10, 10, -5, 0], scale: 1.1 }}
             transition={{ duration: 0.5 }}
-            className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden ${
+            className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-md sm:shadow-lg overflow-hidden shrink-0 ${
               activeLogoUrl
-                ? 'bg-white p-1 border border-violet-100 shadow-violet-500/10'
+                ? 'bg-white p-0.5 sm:p-1 border border-violet-100 shadow-violet-500/10'
                 : 'bg-gradient-to-tr from-violet-600 via-purple-500 to-pink-500 text-white shadow-violet-500/30'
             }`}
           >
             {activeLogoUrl ? (
               <img
                 src={activeLogoUrl}
-                alt="DeutschLernen"
+                alt="LingoVest"
                 className="w-full h-full object-contain"
               />
             ) : (
-              <span className="text-xl">🇩🇪</span>
+              <span className="text-lg sm:text-xl">🇩🇪</span>
             )}
           </motion.div>
           <div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-xl font-display font-extrabold tracking-tight text-slate-900 group-hover:text-violet-600 transition-colors">
-                DeutschLernen
+            <div className="flex items-center gap-1">
+              <span className="text-lg sm:text-xl font-display font-extrabold tracking-tight text-slate-900 group-hover:text-violet-600 transition-colors">
+                LingoVest
               </span>
               <motion.span
                 animate={{ rotate: [0, 15, -15, 0] }}
                 transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-                className="text-lg"
+                className="text-base sm:text-lg"
               >
                 ✨
               </motion.span>
             </div>
-            <p className="text-[10px] font-bold text-violet-400 uppercase tracking-widest -mt-0.5">
+            <p className="text-[9px] sm:text-[10px] font-bold text-violet-400 uppercase tracking-widest -mt-0.5">
               Fun German Academy
             </p>
           </div>
@@ -138,12 +138,12 @@ const Navbar = () => {
         </nav>
 
         {/* Right Action Suite */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {/* Super Admin Shortcut CTA */}
           {isSuperAdmin && (
             <Link
               to="/dashboard/admin/overview"
-              className="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 shadow-md shadow-violet-500/25 transition-all transform hover:-translate-y-0.5"
+              className="hidden md:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 shadow-md shadow-violet-500/25 transition-all transform hover:-translate-y-0.5"
             >
               <LayoutDashboard className="w-3.5 h-3.5 text-amber-300" />
               <span>Admin Panel</span>
@@ -154,7 +154,7 @@ const Navbar = () => {
           {isStaff && (
             <Link
               to="/dashboard/staff/overview"
-              className="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 shadow-md shadow-teal-500/25 transition-all transform hover:-translate-y-0.5"
+              className="hidden md:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 shadow-md shadow-teal-500/25 transition-all transform hover:-translate-y-0.5"
             >
               <LayoutDashboard className="w-3.5 h-3.5 text-emerald-200" />
               <span>Staff Portal</span>
@@ -168,15 +168,15 @@ const Navbar = () => {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="flex items-center gap-2 p-1.5 pr-3 rounded-xl border-2 border-violet-200 hover:border-violet-300 bg-violet-50/50 hover:bg-violet-50 transition-all focus:outline-none"
+                  className="flex items-center gap-1.5 sm:gap-2 p-1 sm:p-1.5 sm:pr-3 rounded-xl border-2 border-violet-200 hover:border-violet-300 bg-violet-50/50 hover:bg-violet-50 transition-all focus:outline-none"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-pink-500 text-white flex items-center justify-center font-extrabold text-xs uppercase shadow-sm">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-violet-500 to-pink-500 text-white flex items-center justify-center font-extrabold text-xs uppercase shadow-sm">
                     {currentUser.name ? currentUser.name.charAt(0) : '🌟'}
                   </div>
-                  <span className="text-xs font-bold text-slate-700 hidden sm:inline max-w-[100px] truncate">
+                  <span className="text-xs font-bold text-slate-700 hidden sm:inline max-w-[90px] truncate">
                     {currentUser.name || 'Account'}
                   </span>
-                  <ChevronDown className="w-3.5 h-3.5 text-violet-400" />
+                  <ChevronDown className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-violet-400" />
                 </motion.button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-60 p-2 rounded-2xl shadow-xl border-violet-100 bg-white">
@@ -226,20 +226,20 @@ const Navbar = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2">
               <Link
                 to="/login"
-                className="px-4 py-2 rounded-xl text-xs font-extrabold text-slate-600 hover:text-violet-700 hover:bg-violet-50 transition-all"
+                className="px-3.5 py-2 rounded-xl text-xs font-extrabold text-slate-600 hover:text-violet-700 hover:bg-violet-50 transition-all"
               >
                 Sign In
               </Link>
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Link
                   to="/signup"
-                  className="px-5 py-2.5 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-violet-600 via-purple-500 to-pink-500 hover:from-violet-700 hover:to-pink-600 shadow-lg shadow-violet-500/25 transition-all flex items-center gap-1.5"
+                  className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-violet-600 via-purple-500 to-pink-500 hover:from-violet-700 hover:to-pink-600 shadow-md shadow-violet-500/25 transition-all flex items-center gap-1.5"
                 >
                   <Rocket className="w-3.5 h-3.5" />
-                  Start Learning!
+                  <span>Start Learning!</span>
                 </Link>
               </motion.div>
             </div>
@@ -247,9 +247,10 @@ const Navbar = () => {
 
           {/* Mobile Menu Toggle Button */}
           <motion.button
-            whileTap={{ scale: 0.9, rotate: 90 }}
+            whileTap={{ scale: 0.9 }}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2.5 rounded-xl text-violet-600 hover:bg-violet-50 border-2 border-violet-200"
+            aria-label="Toggle navigation menu"
+            className="lg:hidden p-2 sm:p-2.5 rounded-xl text-violet-600 hover:bg-violet-50 border-2 border-violet-200 shrink-0"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </motion.button>
@@ -263,32 +264,55 @@ const Navbar = () => {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="lg:hidden border-t-2 border-violet-100 bg-gradient-to-b from-white to-violet-50/50 px-4 pt-3 pb-6 overflow-hidden"
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+            className="lg:hidden border-t-2 border-violet-100 bg-white/98 backdrop-blur-2xl px-4 pt-3 pb-6 max-h-[calc(100vh-70px)] overflow-y-auto space-y-3.5 shadow-2xl"
           >
+            {/* User Info inside Mobile Drawer if logged in */}
+            {currentUser && (
+              <div className="p-3 rounded-2xl bg-gradient-to-r from-violet-50 via-purple-50 to-pink-50 border border-violet-100 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-pink-500 text-white flex items-center justify-center font-extrabold text-sm uppercase shadow-sm shrink-0">
+                    {currentUser.name ? currentUser.name.charAt(0) : '🌟'}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-extrabold text-slate-800 truncate">
+                      {currentUser.name || 'Learner'}
+                    </p>
+                    <p className="text-[11px] text-slate-500 truncate">{currentUser.email}</p>
+                  </div>
+                </div>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-violet-200 text-violet-800 uppercase shrink-0">
+                  {role || 'USER'}
+                </span>
+              </div>
+            )}
+
             <nav className="space-y-1">
               {NAV_LINKS.map((link, idx) => {
                 const isActive = location.pathname === link.to;
                 return (
                   <motion.div
                     key={link.to}
-                    initial={{ x: -20, opacity: 0 }}
+                    initial={{ x: -10, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: idx * 0.05 }}
+                    transition={{ delay: idx * 0.04 }}
                   >
                     <Link
                       to={link.to}
                       onClick={() => setMobileMenuOpen(false)}
-                      className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-extrabold transition-all ${
+                      className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-extrabold transition-all ${
                         isActive
-                          ? 'text-violet-700 bg-violet-100 shadow-sm'
-                          : 'text-slate-700 hover:bg-violet-50'
+                          ? 'text-violet-700 bg-violet-100/90 shadow-sm border border-violet-200'
+                          : 'text-slate-700 hover:bg-violet-50 border border-transparent'
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <span className="text-lg">{link.emoji}</span>
                         <span>{link.label}</span>
                       </div>
+                      {isActive && (
+                        <span className="w-2 h-2 rounded-full bg-violet-600" />
+                      )}
                     </Link>
                   </motion.div>
                 );
@@ -296,11 +320,11 @@ const Navbar = () => {
             </nav>
 
             {isSuperAdmin && (
-              <div className="pt-3 border-t border-violet-100 mt-3">
+              <div className="pt-2 border-t border-violet-100">
                 <Link
                   to="/dashboard/admin/overview"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-violet-600 to-purple-600 shadow-md"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-violet-600 to-purple-600 shadow-md"
                 >
                   <LayoutDashboard className="w-4 h-4 text-amber-300" />
                   <span>Super Admin Panel</span>
@@ -309,14 +333,46 @@ const Navbar = () => {
             )}
 
             {isStaff && (
-              <div className="pt-3 border-t border-violet-100 mt-3">
+              <div className="pt-2 border-t border-violet-100">
                 <Link
                   to="/dashboard/staff/overview"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-teal-500 to-emerald-500 shadow-md"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-teal-500 to-emerald-500 shadow-md"
                 >
                   <LayoutDashboard className="w-4 h-4 text-emerald-200" />
                   <span>Staff Editorial Portal</span>
+                </Link>
+              </div>
+            )}
+
+            {/* Bottom Actions inside Drawer */}
+            {currentUser ? (
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  handleLogout();
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Tschüss! Sign Out</span>
+              </button>
+            ) : (
+              <div className="pt-2 border-t border-violet-100 space-y-2">
+                <Link
+                  to="/signup"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-violet-600 via-purple-500 to-pink-500 shadow-md shadow-violet-500/25"
+                >
+                  <Rocket className="w-3.5 h-3.5" />
+                  <span>Start Learning for Free! 🚀</span>
+                </Link>
+                <Link
+                  to="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold text-slate-700 bg-violet-50 hover:bg-violet-100 border border-violet-200"
+                >
+                  <span>Sign In to Account 🔑</span>
                 </Link>
               </div>
             )}

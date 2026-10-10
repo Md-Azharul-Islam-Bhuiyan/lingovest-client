@@ -153,7 +153,7 @@ const AdminDashboard = () => {
                   {activeLogoUrl ? (
                     <img
                       src={activeLogoUrl}
-                      alt="DeutschLernen"
+                      alt="LingoVest"
                       className="w-full h-full object-contain"
                     />
                   ) : (
@@ -162,7 +162,7 @@ const AdminDashboard = () => {
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-slate-900 leading-tight">
-                    DeutschLernen
+                    LingoVest
                   </h2>
                   <span className="text-[11px] font-semibold text-orange-600 tracking-wider uppercase">
                     Super Admin Panel

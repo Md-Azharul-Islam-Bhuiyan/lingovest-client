@@ -6,7 +6,7 @@ import Navbar from '../components/common/Navbar';
 
 const MainLayout = () => {
   return (
-    <div className="overflow-hidden bg-animated-gradient min-h-screen">
+    <div className="overflow-x-clip bg-animated-gradient min-h-screen relative w-full">
       <NewsTicker />
       <Topbar />
       <Navbar />

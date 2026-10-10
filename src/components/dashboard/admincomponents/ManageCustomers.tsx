@@ -253,7 +253,7 @@ const ManageCustomers: React.FC = () => {
               Learners & Registration Management
             </h1>
             <p className="text-sm md:text-base text-violet-200/90 leading-relaxed">
-              Review public sign-up registration requests, approve learners into DeutschLernen, and administer portal access.
+              Review public sign-up registration requests, approve learners into LingoVest, and administer portal access.
             </p>
           </div>
 
