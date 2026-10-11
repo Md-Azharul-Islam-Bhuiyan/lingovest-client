@@ -13,6 +13,7 @@ import {
   ChevronDown,
   Star,
   Rocket,
+  Compass,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -31,8 +32,10 @@ import { toast } from 'sonner';
 
 const NAV_LINKS = [
   { to: '/', label: 'Home', icon: null, emoji: '🏠' },
-  { to: '/vocabulary', label: 'Words', icon: BookOpen, emoji: '📚', color: 'text-violet-600' },
-  { to: '/reading', label: 'Stories', icon: FileText, emoji: '📖', color: 'text-blue-600' },
+  { to: '/curriculum', label: 'Lernwelten', icon: Compass, emoji: '🗺️', color: 'text-violet-600' },
+  { to: '/grammar', label: 'Grammatik', icon: BookOpen, emoji: '📖', color: 'text-indigo-600' },
+  { to: '/vocabulary', label: 'Words', icon: BookOpen, emoji: '📚', color: 'text-emerald-600' },
+  { to: '/reading', label: 'Stories', icon: FileText, emoji: '📑', color: 'text-blue-600' },
   { to: '/listening', label: 'Listen', icon: Headphones, emoji: '🎧', color: 'text-teal-600' },
   { to: '/quizzes', label: 'Quizzes', icon: HelpCircle, emoji: '🧩', color: 'text-pink-600' },
 ];

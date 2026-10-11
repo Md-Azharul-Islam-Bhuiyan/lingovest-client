@@ -153,6 +153,8 @@ export const baseApi = createApi({
     'listening',
     'reading',
     'vocabulary',
+    'curriculum',
+    'learnerProgress',
   ],
   endpoints: () => ({}),
 });

@@ -11,10 +11,20 @@ import LearnerVocabulary from '@/pages/LearnerVocabulary';
 import LearnerReading from '@/pages/LearnerReading';
 import LearnerListening from '@/pages/LearnerListening';
 import LearnerQuizzes from '@/pages/LearnerQuizzes';
+import LearningWorlds from '@/pages/LearningWorlds';
+import CurriculumCalendar from '@/pages/CurriculumCalendar';
+import LessonPlayer from '@/pages/LessonPlayer';
+import GrammarLibrary from '@/pages/GrammarLibrary';
 
 export const mainRoutePaths = [
   { index: true, element: <Home /> },
-  // German Learning Core Learner Modules
+  // German Learning Core Curriculum & 60-Day Interactive Platform
+  { path: 'curriculum', element: <LearningWorlds /> },
+  { path: 'curriculum/:levelCode', element: <CurriculumCalendar /> },
+  { path: 'lesson/:levelCode/:dayNumber', element: <LessonPlayer /> },
+  { path: 'grammar', element: <GrammarLibrary /> },
+
+  // German Learning Additional Practice Modules
   { path: 'vocabulary', element: <LearnerVocabulary /> },
   { path: 'reading', element: <LearnerReading /> },
   { path: 'listening', element: <LearnerListening /> },

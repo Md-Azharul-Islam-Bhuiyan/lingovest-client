@@ -266,22 +266,32 @@ const Home = () => {
               <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 sm:gap-4">
                 <motion.div whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto">
                   <Link
-                    to="/vocabulary"
+                    to="/curriculum"
                     className="w-full sm:w-auto px-6 py-3.5 sm:px-7 sm:py-4 rounded-2xl bg-gradient-to-r from-violet-600 via-purple-500 to-pink-500 hover:from-violet-700 hover:to-pink-600 text-white font-extrabold text-sm shadow-xl shadow-violet-500/30 transition-all flex items-center justify-center gap-2"
                   >
-                    <BookOpen className="w-5 h-5" />
-                    <span>Start Learning! 📚</span>
+                    <Rocket className="w-5 h-5 text-amber-300" />
+                    <span>Lernwelten (60-Day Plans) 🗺️</span>
                     <ArrowRight className="w-4 h-4 ml-1" />
                   </Link>
                 </motion.div>
 
                 <motion.div whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto">
                   <Link
-                    to="/quizzes"
+                    to="/vocabulary"
                     className="w-full sm:w-auto px-6 py-3.5 sm:px-7 sm:py-4 rounded-2xl bg-white hover:bg-violet-50 text-slate-800 font-extrabold text-sm border-2 border-violet-200 shadow-sm transition-all flex items-center justify-center gap-2"
                   >
-                    <Zap className="w-5 h-5 text-amber-500" />
-                    <span>Quiz Arena 🧩</span>
+                    <BookOpen className="w-5 h-5 text-violet-600" />
+                    <span>Flashcards 📚</span>
+                  </Link>
+                </motion.div>
+
+                <motion.div whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto">
+                  <Link
+                    to="/grammar"
+                    className="w-full sm:w-auto px-5 py-3.5 sm:px-6 sm:py-4 rounded-2xl bg-white hover:bg-indigo-50 text-slate-800 font-extrabold text-sm border-2 border-indigo-200 shadow-sm transition-all flex items-center justify-center gap-2"
+                  >
+                    <Sparkles className="w-5 h-5 text-indigo-500" />
+                    <span>Grammatik 📖</span>
                   </Link>
                 </motion.div>
               </div>
