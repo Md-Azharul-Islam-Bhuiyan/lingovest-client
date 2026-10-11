@@ -2,774 +2,994 @@ import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  BookOpen,
-  FileText,
-  Headphones,
-  HelpCircle,
   Volume2,
-  Sparkles,
   ArrowRight,
   CheckCircle2,
   XCircle,
   Star,
-  Rocket,
-  Zap,
-  Trophy,
-  Heart,
+  Compass,
+  BookOpen,
+  Sparkles,
+  Layers,
+  HelpCircle,
+  FileText,
+  Headphones,
+  Check,
+  RotateCcw,
+  GraduationCap,
+  Award,
+  ChevronRight,
 } from 'lucide-react';
 import ScrollToTop from '@/components/ui/ToTop';
-import VocabularyFlashcard from '@/components/vocabulary/VocabularyFlashcard';
+import { FelixMascot, MascotState } from '@/components/mascot/FelixMascot';
 
-const CEFR_TABS = [
+// ==========================================
+// DATA: HERO MINI CHALLENGES
+// ==========================================
+interface HeroChallenge {
+  id: string;
+  level: string;
+  prompt: string;
+  sentencePre: string;
+  blank: string;
+  sentencePost: string;
+  options: string[];
+  correct: string;
+  explanationEn: string;
+  explanationBn: string;
+  fullSentence: string;
+}
+
+const HERO_CHALLENGES: HeroChallenge[] = [
   {
+    id: 'hero-1',
+    level: 'A1 Beginner',
+    prompt: 'Conjugate the verb for "ich" (I):',
+    sentencePre: 'Ich',
+    blank: '___',
+    sentencePost: 'Deutsch.',
+    options: ['lerne', 'lernst', 'lernen'],
+    correct: 'lerne',
+    explanationEn: '“Ich lerne” is correct because regular present-tense verbs with “ich” take the ending -e.',
+    explanationBn: '‘Ich’ (আমি)-এর সাথে বর্তমান কালের নিয়মিত ক্রিয়াপদে ‘-e’ বিভক্তি যুক্ত হয়।',
+    fullSentence: 'Ich lerne Deutsch.',
+  },
+  {
+    id: 'hero-2',
+    level: 'A1 Articles',
+    prompt: 'Choose the correct definite article for "Katze":',
+    sentencePre: '',
+    blank: '___',
+    sentencePost: 'Katze schläft auf dem Sofa.',
+    options: ['Der', 'Die', 'Das'],
+    correct: 'Die',
+    explanationEn: '“Katze” is feminine in German, so the nominative singular article is always “die”.',
+    explanationBn: 'জার্মান ভাষায় ‘Katze’ (বিড়াল) একটি Feminin Noun, তাই এর পূর্বে ‘die’ বসে।',
+    fullSentence: 'Die Katze schläft auf dem Sofa.',
+  },
+  {
+    id: 'hero-3',
+    level: 'A2 Conjunctions',
+    prompt: 'Complete the subordinate clause (verb at end):',
+    sentencePre: 'Er lernt fleißig, weil er nach Berlin reisen',
+    blank: '___',
+    sentencePost: '.',
+    options: ['will', 'wollen', 'willst'],
+    correct: 'will',
+    explanationEn: 'In subordinate clauses with “weil”, the conjugated verb (“will”) moves to the very end.',
+    explanationBn: '‘weil’ (কারণ)-যুক্ত subordinate clause-এ প্রধান ক্রিয়াপদটি বাক্যের একেবারে শেষে বসে।',
+    fullSentence: 'Er lernt fleißig, weil er nach Berlin reisen will.',
+  },
+];
+
+// ==========================================
+// DATA: A1–C2 CEFR LEARNING WORLDS
+// ==========================================
+interface CefrLevelInfo {
+  code: string;
+  name: string;
+  germanTitle: string;
+  cefrTitle: string;
+  description: string;
+  daysCount: number;
+  topicsCount: string;
+  milestone: string;
+  colorScheme: {
+    badge: string;
+    border: string;
+    accent: string;
+    bgHover: string;
+  };
+  samplePhrase: {
+    german: string;
+    english: string;
+    grammarNote: string;
+  };
+  link: string;
+}
+
+const CEFR_LEVELS_DATA: CefrLevelInfo[] = [
+  {
+    code: 'A1',
+    name: 'Starter Village',
+    germanTitle: 'Grundstufe 1',
+    cefrTitle: 'Absolute Beginner',
+    description: 'Master everyday foundations: introductions, present tense conjugations, definite articles (der/die/das), and basic sentence structures.',
+    daysCount: 60,
+    topicsCount: '60 Lessons • 180 Exercises',
+    milestone: 'Hold simple daily conversations & introduce yourself',
+    colorScheme: {
+      badge: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+      border: 'border-emerald-200 hover:border-emerald-400',
+      accent: 'text-emerald-700',
+      bgHover: 'hover:bg-emerald-50/40',
+    },
+    samplePhrase: {
+      german: 'Guten Tag! Ich heiße Anna und komme aus Berlin.',
+      english: 'Good day! My name is Anna and I come from Berlin.',
+      grammarNote: 'Present tense regular verbs: heißen (heiße) & kommen (komme).',
+    },
+    link: '/curriculum/A1',
+  },
+  {
+    code: 'A2',
+    name: 'Grammar Forest',
+    germanTitle: 'Grundstufe 2',
+    cefrTitle: 'Elementary German',
+    description: 'Express past events (Perfekt tense), use modal verbs (können, müssen, dürfen), navigate directions, shopping, and everyday travel situations.',
+    daysCount: 60,
+    topicsCount: '60 Lessons • 180 Exercises',
+    milestone: 'Describe past experiences & routine daily tasks',
+    colorScheme: {
+      badge: 'bg-sky-100 text-sky-800 border-sky-200',
+      border: 'border-sky-200 hover:border-sky-400',
+      accent: 'text-sky-700',
+      bgHover: 'hover:bg-sky-50/40',
+    },
+    samplePhrase: {
+      german: 'Gestern habe ich mit Freunden einen Film gesehen.',
+      english: 'Yesterday I watched a movie with friends.',
+      grammarNote: 'Perfekt tense: auxiliary “habe” + past participle “gesehen”.',
+    },
+    link: '/curriculum/A2',
+  },
+  {
+    code: 'B1',
+    name: 'Vocab Island',
+    germanTitle: 'Zertifikat B1',
+    cefrTitle: 'Intermediate Fluency',
+    description: 'The Goethe-Zertifikat B1 benchmark. Connect complex thoughts using subordinate clauses (weil, dass, obwohl), express opinions, and handle workplace German.',
+    daysCount: 60,
+    topicsCount: '60 Lessons • 180 Exercises',
+    milestone: 'Achieve Goethe-Zertifikat B1 exam readiness',
+    colorScheme: {
+      badge: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+      border: 'border-indigo-200 hover:border-indigo-400',
+      accent: 'text-indigo-700',
+      bgHover: 'hover:bg-indigo-50/40',
+    },
+    samplePhrase: {
+      german: 'Obwohl es geregnet hat, haben wir den Ausflug gemacht.',
+      english: 'Although it rained, we went on the excursion.',
+      grammarNote: 'Concessive clause with “obwohl” placing the verb at the end.',
+    },
+    link: '/curriculum/B1',
+  },
+  {
+    code: 'B2',
+    name: 'Grammar Castle',
+    germanTitle: 'Mittelstufe',
+    cefrTitle: 'Upper-Intermediate',
+    description: 'Navigate professional German: Passive voice (Vorgangspassiv), Konjunktiv II for diplomacy and hypotheses, nominal style, and debating complex topics.',
+    daysCount: 60,
+    topicsCount: '60 Lessons • 180 Exercises',
+    milestone: 'Work & study in German universities or companies',
+    colorScheme: {
+      badge: 'bg-amber-100 text-amber-800 border-amber-200',
+      border: 'border-amber-200 hover:border-amber-400',
+      accent: 'text-amber-700',
+      bgHover: 'hover:bg-amber-50/40',
+    },
+    samplePhrase: {
+      german: 'Wenn ich mehr Zeit hätte, würde ich mich engagieren.',
+      english: 'If I had more time, I would get involved.',
+      grammarNote: 'Konjunktiv II subjunctive: “hätte” + “würde... engagieren”.',
+    },
+    link: '/curriculum/B2',
+  },
+  {
+    code: 'C1',
+    name: 'Fluency City',
+    germanTitle: 'Oberstufe 1',
+    cefrTitle: 'Advanced Proficiency',
+    description: 'Academic German and TestDaF preparation. Master complex sentence connectors, idiomatic formulations, stylistic nuances, and academic argumentation.',
+    daysCount: 60,
+    topicsCount: '60 Lessons • 180 Exercises',
+    milestone: 'TestDaF / C1 Hochschule examination proficiency',
+    colorScheme: {
+      badge: 'bg-rose-100 text-rose-800 border-rose-200',
+      border: 'border-rose-200 hover:border-rose-400',
+      accent: 'text-rose-700',
+      bgHover: 'hover:bg-rose-50/40',
+    },
+    samplePhrase: {
+      german: 'Angesichts der aktuellen Lage ist dieses Vorgehen unverzichtbar.',
+      english: 'In light of the current situation, this course of action is indispensable.',
+      grammarNote: 'Genitive preposition “angesichts” with nominal abstract style.',
+    },
+    link: '/curriculum/C1',
+  },
+  {
+    code: 'C2',
+    name: 'Master’s Kingdom',
+    germanTitle: 'Oberstufe 2',
+    cefrTitle: 'Mastery & Near-Native',
+    description: 'Effortlessly comprehend virtually everything heard or read. Reconstruct arguments, distinguish subtle shades of meaning, and speak with native-level precision.',
+    daysCount: 60,
+    topicsCount: '60 Lessons • 180 Exercises',
+    milestone: 'Complete near-native fluency across literature & media',
+    colorScheme: {
+      badge: 'bg-purple-100 text-purple-800 border-purple-200',
+      border: 'border-purple-200 hover:border-purple-400',
+      accent: 'text-purple-700',
+      bgHover: 'hover:bg-purple-50/40',
+    },
+    samplePhrase: {
+      german: 'Seine Ausführungen bestachen durch rhetorische Brillanz.',
+      english: 'His remarks stood out for their rhetorical brilliance.',
+      grammarNote: 'High-register literary idiom: “bestechen durch” (captivate with).',
+    },
+    link: '/curriculum/C2',
+  },
+];
+
+// ==========================================
+// DATA: LIVE LESSON TRYOUT (SECTION 3)
+// ==========================================
+interface LessonTryout {
+  level: string;
+  title: string;
+  question: string;
+  options: string[];
+  correct: string;
+  explanation: string;
+  translation: string;
+  bengaliNote: string;
+}
+
+const LESSON_TRYOUTS: Record<string, LessonTryout> = {
+  A1: {
     level: 'A1',
-    title: 'Absolute Beginner',
-    subtitle: 'Grundlegende Kenntnisse',
-    desc: 'Introduce yourself, ask simple questions, and master everyday basics: greetings, food, numbers, and core nouns.',
-    sampleWord: 'der Kaffee',
-    meaning: 'the coffee (কফি)',
-    sampleSentence: 'Ich trinke morgens gerne einen Kaffee.',
-    emoji: '🌱',
-    color: 'from-emerald-400 to-green-500',
-    bg: 'bg-emerald-50',
+    title: 'A1: Present Tense Verb Endings',
+    question: 'Er ___ jeden Morgen um 7 Uhr auf.',
+    options: ['steht', 'stehen', 'stehst'],
+    correct: 'steht',
+    explanation: '“Er” (he) takes the verb ending -t in the regular present tense: “er steht auf”.',
+    translation: 'He gets up every morning at 7 o’clock.',
+    bengaliNote: '‘Er’ (সে)-এর সাথে বর্তমান কালের ক্রিয়াপদে ‘-t’ বিভক্তি বসে (aufstehen -> steht auf)।',
   },
-  {
+  A2: {
     level: 'A2',
-    title: 'Elementary',
-    subtitle: 'Elementare Sprachverwendung',
-    desc: 'Communicate in routine situations: shopping, family, local geography, and basic past tense descriptions (Perfekt).',
-    sampleWord: 'die Einladung',
-    meaning: 'the invitation (আমন্ত্রণ)',
-    sampleSentence: 'Vielen Dank für deine herzliche Einladung!',
-    emoji: '🌿',
-    color: 'from-blue-400 to-cyan-500',
-    bg: 'bg-blue-50',
+    title: 'A2: Conversational Past (Perfekt)',
+    question: 'Wir haben gestern eine neue Wohnung ___.',
+    options: ['besichtigt', 'besichtigen', 'besichtigte'],
+    correct: 'besichtigt',
+    explanation: 'Regular inseparable verbs with prefix “be-” form the Partizip II with ending -t without “ge-”: besichtigt.',
+    translation: 'We viewed a new apartment yesterday.',
+    bengaliNote: '‘be-’ উপসর্গযুক্ত ক্রিয়ার Partizip II গঠনে ‘ge-’ যুক্ত হয় না (besichtigt)।',
   },
-  {
+  B1: {
     level: 'B1',
-    title: 'Intermediate (Goethe)',
-    subtitle: 'Selbstständige Sprachverwendung',
-    desc: 'Deal with most situations while traveling in Germany, discuss hobbies, express opinions, and describe experiences.',
-    sampleWord: 'die Berufserfahrung',
-    meaning: 'work experience (কাজের অভিজ্ঞতা)',
-    sampleSentence: 'Er hat bereits fünf Jahre Berufserfahrung im IT-Bereich.',
-    emoji: '🌳',
-    color: 'from-amber-400 to-yellow-500',
-    bg: 'bg-amber-50',
+    title: 'B1: Subordinate Clause Word Order',
+    question: 'Ich freue mich, dass du mich besuchen ___.',
+    options: ['kommst', 'kommen', 'gekommen'],
+    correct: 'kommst',
+    explanation: 'In subordinate clauses introduced by “dass”, the conjugated verb (“kommst”) must move to the very end.',
+    translation: 'I am happy that you are coming to visit me.',
+    bengaliNote: '‘dass’ (যে)-যুক্ত subordinate clause-এ verb বাক্যের একদম শেষে অবস্থান করে।',
   },
-  {
+  B2: {
     level: 'B2',
-    title: 'Upper Intermediate',
-    subtitle: 'Berufliche Sprachkenntnisse',
-    desc: 'Understand complex texts on concrete and abstract topics; communicate fluently with native speakers.',
-    sampleWord: 'die Nachhaltigkeit',
-    meaning: 'sustainability (টেকসই ব্যবস্থা)',
-    sampleSentence: 'Nachhaltigkeit ist heute ein zentrales Thema in der Wirtschaft.',
-    emoji: '🎯',
-    color: 'from-orange-400 to-rose-500',
-    bg: 'bg-orange-50',
+    title: 'B2: Passive Voice (Vorgangspassiv)',
+    question: 'Das neue Museum ___ nächste Woche eröffnet.',
+    options: ['wird', 'wurde', 'worden'],
+    correct: 'wird',
+    explanation: 'Present tense passive voice is formed with “werden” (3rd person singular “wird”) + Partizip II (“eröffnet”).',
+    translation: 'The new museum will be opened / is being opened next week.',
+    bengaliNote: 'বর্তমান কালের Passive Voice-এ werden (wird) + Partizip II ব্যবহৃত হয়।',
   },
-  {
-    level: 'C1',
-    title: 'Advanced Fluency',
-    subtitle: 'Fachkundige Sprachkenntnisse',
-    desc: 'Express ideas fluently and spontaneously for academic (TestDaF) and professional purposes.',
-    sampleWord: 'das Verantwortungsbewusstsein',
-    meaning: 'sense of responsibility (দায়িত্ববোধ)',
-    sampleSentence: 'Diese Position erfordert ein hohes Maß an Verantwortungsbewusstsein.',
-    emoji: '🔥',
-    color: 'from-rose-400 to-red-500',
-    bg: 'bg-rose-50',
-  },
-  {
-    level: 'C2',
-    title: 'Mastery',
-    subtitle: 'Muttersprachliche Kenntnisse',
-    desc: 'Understand virtually everything heard or read; summarize info and reconstruct arguments coherently.',
-    sampleWord: 'die Sprachgewandtheit',
-    meaning: 'eloquence (বাগ্মীতা)',
-    sampleSentence: 'Ihre Sprachgewandtheit beeindruckte das gesamte Publikum.',
-    emoji: '🏆',
-    color: 'from-violet-500 to-purple-600',
-    bg: 'bg-violet-50',
-  },
-];
-
-const PILLARS = [
-  {
-    to: '/vocabulary',
-    emoji: '📚',
-    module: 'Module 1',
-    title: 'Vocabulary',
-    germanTitle: 'Wortschatz',
-    desc: 'Color-coded gender articles (der, die, das), plurals, dual audio, and Bengali meanings.',
-    gradient: 'from-violet-500 to-purple-600',
-    hoverBorder: 'hover:border-violet-300',
-    textColor: 'text-violet-600',
-    shadow: 'shadow-violet-500/20',
-    cta: 'Explore Words',
-  },
-  {
-    to: '/reading',
-    emoji: '📖',
-    module: 'Module 2',
-    title: 'Reading',
-    germanTitle: 'Leseverstehen',
-    desc: 'German stories graded A1–C1 with comprehension checks and bilingual summaries.',
-    gradient: 'from-blue-500 to-cyan-500',
-    hoverBorder: 'hover:border-blue-300',
-    textColor: 'text-blue-600',
-    shadow: 'shadow-blue-500/20',
-    cta: 'Read Stories',
-  },
-  {
-    to: '/listening',
-    emoji: '🎧',
-    module: 'Module 3',
-    title: 'Listening',
-    germanTitle: 'Hörverstehen',
-    desc: 'Dialogue scripts with conversational turns, dictation exercises, and listening MCQs.',
-    gradient: 'from-teal-500 to-emerald-500',
-    hoverBorder: 'hover:border-teal-300',
-    textColor: 'text-teal-600',
-    shadow: 'shadow-teal-500/20',
-    cta: 'Start Listening',
-  },
-  {
-    to: '/quizzes',
-    emoji: '🧩',
-    module: 'Module 4',
-    title: 'Quizzes',
-    germanTitle: 'Übungsarena',
-    desc: 'Sentence scrambles, article drills, fill-in-blanks, and Bengali grammar explanations.',
-    gradient: 'from-pink-500 to-rose-500',
-    hoverBorder: 'hover:border-pink-300',
-    textColor: 'text-pink-600',
-    shadow: 'shadow-pink-500/20',
-    cta: 'Play Quizzes',
-  },
-];
+};
 
 const Home = () => {
-  const [activeTab, setActiveTab] = useState('A1');
-  const [interactiveQuizChoice, setInteractiveQuizChoice] = useState<string | null>(null);
-  const [showConfetti, setShowConfetti] = useState(false);
+  // Hero Interactive Preview State
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [heroSelectedAnswer, setHeroSelectedAnswer] = useState<string | null>(null);
+  const [mascotState, setMascotState] = useState<MascotState>('idle');
+  const [mascotText, setMascotText] = useState('Hallo! Ready to test your German?');
 
-  const activeLevelData = CEFR_TABS.find((t) => t.level === activeTab) || CEFR_TABS[0];
+  // Section 3: Try a Lesson State
+  const [tryoutLevel, setTryoutLevel] = useState<'A1' | 'A2' | 'B1' | 'B2'>('A1');
+  const [tryoutChoice, setTryoutChoice] = useState<string | null>(null);
 
+  // Active level card focus in Section 2
+  const [selectedCefrCode, setSelectedCefrCode] = useState<string>('A1');
+
+  const currentHeroChallenge = HERO_CHALLENGES[heroIndex];
+  const currentTryout = LESSON_TRYOUTS[tryoutLevel];
+
+  // Web Speech API Native Pronunciation
   const playSpeech = useCallback((text: string) => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'de-DE';
-      utterance.rate = 0.9;
+      utterance.rate = 0.88;
       window.speechSynthesis.speak(utterance);
     }
   }, []);
 
-  const handleQuizChoice = (choice: string) => {
-    setInteractiveQuizChoice(choice);
-    if (choice === 'die') {
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 2000);
+  // Handle Hero Challenge Answer
+  const handleHeroSelect = (choice: string) => {
+    setHeroSelectedAnswer(choice);
+    if (choice === currentHeroChallenge.correct) {
+      setMascotState('happy');
+      setMascotText('Richtig! Ausgezeichnet! 🎉');
+      playSpeech(currentHeroChallenge.fullSentence);
+    } else {
+      setMascotState('encouraging');
+      setMascotText('Guter Versuch! Try again or see the note below.');
+    }
+  };
+
+  const handleNextHeroChallenge = () => {
+    setHeroSelectedAnswer(null);
+    setHeroIndex((prev) => (prev + 1) % HERO_CHALLENGES.length);
+    setMascotState('thinking');
+    setMascotText('Here comes the next challenge! 🇩🇪');
+  };
+
+  // Handle Section 3 Tryout Answer
+  const handleTryoutSelect = (choice: string) => {
+    setTryoutChoice(choice);
+    if (choice === currentTryout.correct) {
+      playSpeech(currentTryout.question.replace('___', choice));
     }
   };
 
   return (
-    <div className="space-y-16 lg:space-y-24 pb-20 bg-animated-gradient min-h-screen">
+    <div className="bg-slate-50/60 min-h-screen text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
       <ScrollToTop />
 
-      {/* CONFETTI BURST */}
-      <AnimatePresence>
-        {showConfetti && (
-          <>
-            {Array.from({ length: 30 }).map((_, i) => (
-              <motion.div
-                key={i}
-                className="confetti-piece"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  background: ['#FF6B9D', '#C084FC', '#60A5FA', '#2DD4BF', '#FBBF24', '#4ADE80', '#FB923C'][i % 7],
-                  borderRadius: Math.random() > 0.5 ? '50%' : '2px',
-                  width: `${8 + Math.random() * 8}px`,
-                  height: `${8 + Math.random() * 8}px`,
-                }}
-                initial={{ y: -100, opacity: 1, rotate: 0 }}
-                animate={{ y: '100vh', opacity: 0, rotate: 720 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 2 + Math.random(), delay: Math.random() * 0.5 }}
-              />
-            ))}
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* ============ HERO SECTION ============ */}
-      <section className="relative overflow-hidden pt-10 pb-16 lg:pt-16 lg:pb-24">
-        {/* Decorative floating emojis */}
+      {/* ========================================================
+          SECTION 1: HERO SECTION
+          Two-column balanced desktop composition
+          ======================================================== */}
+      <section className="relative pt-8 pb-16 lg:pt-16 lg:pb-24 border-b border-slate-200/80 overflow-hidden bg-white">
+        {/* Subtle background glow */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <motion.div animate={{ y: [0, -20, 0] }} transition={{ duration: 5, repeat: Infinity }} className="absolute top-[10%] left-[8%] text-4xl opacity-20">📚</motion.div>
-          <motion.div animate={{ y: [0, 15, 0] }} transition={{ duration: 6, repeat: Infinity, delay: 1 }} className="absolute top-[25%] right-[12%] text-3xl opacity-15">🎧</motion.div>
-          <motion.div animate={{ y: [0, -15, 0] }} transition={{ duration: 7, repeat: Infinity, delay: 2 }} className="absolute bottom-[20%] left-[15%] text-3xl opacity-15">🧩</motion.div>
-          <motion.div animate={{ y: [0, 12, 0] }} transition={{ duration: 4, repeat: Infinity, delay: 0.5 }} className="absolute top-[15%] left-[50%] text-2xl opacity-15">⭐</motion.div>
-          <motion.div animate={{ y: [0, -18, 0] }} transition={{ duration: 8, repeat: Infinity, delay: 3 }} className="absolute bottom-[30%] right-[8%] text-3xl opacity-15">🇩🇪</motion.div>
-
-          {/* Glow blobs */}
-          <div className="absolute top-0 right-[10%] w-[500px] h-[500px] bg-gradient-to-tr from-violet-400/15 via-purple-500/10 to-transparent rounded-full blur-3xl" />
-          <div className="absolute bottom-[10%] left-[5%] w-[450px] h-[450px] bg-gradient-to-tr from-pink-400/10 via-rose-500/10 to-transparent rounded-full blur-3xl" />
+          <div className="absolute -top-32 -right-32 w-96 h-96 bg-indigo-50/60 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 -left-32 w-80 h-80 bg-slate-100/80 rounded-full blur-3xl" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            {/* Left Column */}
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.7 }}
-              className="lg:col-span-7 space-y-6 text-center lg:text-left"
-            >
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-100 border-2 border-violet-200 text-violet-800 text-xs font-extrabold tracking-wide"
-              >
-                <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                <span>Goethe-Zertifikat CEFR Standards (A1 – C2)</span>
-                <motion.span animate={{ rotate: [0, 15, -15, 0] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}>🎓</motion.span>
-              </motion.div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+            {/* Left Column: Headline, Value Proposition & Actions */}
+            <div className="lg:col-span-7 space-y-6 text-left">
+              {/* Eyebrow Label */}
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold tracking-wider uppercase">
+                <span className="w-2 h-2 rounded-full bg-indigo-600" />
+                <span>YOUR GERMAN JOURNEY STARTS HERE</span>
+              </div>
 
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-display font-extrabold text-slate-900 tracking-tight leading-[1.15]">
-                Learn German with{' '}
-                <span className="gradient-text-rainbow">
-                  Fun & Games
-                </span>{' '}
-                <motion.span
-                  className="inline-block"
-                  animate={{ rotate: [0, 10, -10, 0] }}
-                  transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 4 }}
-                >
-                  🚀
-                </motion.span>
+              {/* Main Headline */}
+              <h1 className="text-3xl sm:text-5xl lg:text-[54px] font-extrabold tracking-tight text-slate-900 leading-[1.12]">
+                Learn German with confidence.{' '}
+                <span className="text-indigo-600 inline-block">
+                  One step at a time.
+                </span>
               </h1>
 
-              <div className="space-y-2">
-                <p className="text-base sm:text-lg text-slate-600 leading-relaxed font-semibold">
-                  The most fun way to learn German! Interactive vocabulary with audio, exciting reading stories, listening games, and quizzes — all with Bengali & English explanations.
-                </p>
-                <p className="text-xs sm:text-sm font-bold text-violet-700 bg-violet-50 px-3 sm:px-4 py-2 rounded-xl inline-block leading-relaxed">
-                  🇧🇩 বাংলা অনুবাদ ও ব্যাকরণ ব্যাখ্যাসহ জার্মান ভাষা শিখুন!
-                </p>
-              </div>
+              {/* Supporting Value Proposition */}
+              <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl font-normal">
+                Build your German grammar skills through guided daily lessons, interactive exercises, and a structured learning path designed around your exact CEFR level.
+              </p>
 
-              {/* Action Buttons */}
-              <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 sm:gap-4">
-                <motion.div whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto">
-                  <Link
-                    to="/curriculum"
-                    className="w-full sm:w-auto px-6 py-3.5 sm:px-7 sm:py-4 rounded-2xl bg-gradient-to-r from-violet-600 via-purple-500 to-pink-500 hover:from-violet-700 hover:to-pink-600 text-white font-extrabold text-sm shadow-xl shadow-violet-500/30 transition-all flex items-center justify-center gap-2"
-                  >
-                    <Rocket className="w-5 h-5 text-amber-300" />
-                    <span>Lernwelten (60-Day Plans) 🗺️</span>
-                    <ArrowRight className="w-4 h-4 ml-1" />
-                  </Link>
-                </motion.div>
-
-                <motion.div whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto">
-                  <Link
-                    to="/vocabulary"
-                    className="w-full sm:w-auto px-6 py-3.5 sm:px-7 sm:py-4 rounded-2xl bg-white hover:bg-violet-50 text-slate-800 font-extrabold text-sm border-2 border-violet-200 shadow-sm transition-all flex items-center justify-center gap-2"
-                  >
-                    <BookOpen className="w-5 h-5 text-violet-600" />
-                    <span>Flashcards 📚</span>
-                  </Link>
-                </motion.div>
-
-                <motion.div whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto">
-                  <Link
-                    to="/grammar"
-                    className="w-full sm:w-auto px-5 py-3.5 sm:px-6 sm:py-4 rounded-2xl bg-white hover:bg-indigo-50 text-slate-800 font-extrabold text-sm border-2 border-indigo-200 shadow-sm transition-all flex items-center justify-center gap-2"
-                  >
-                    <Sparkles className="w-5 h-5 text-indigo-500" />
-                    <span>Grammatik 📖</span>
-                  </Link>
-                </motion.div>
-              </div>
-
-              {/* Feature badges */}
-              <div className="pt-4 flex items-center justify-center lg:justify-start gap-4 flex-wrap">
-                {[
-                  { icon: '🔊', label: 'Native Audio' },
-                  { icon: '✨', label: 'AI-Powered' },
-                  { icon: '🇧🇩', label: 'Bengali Support' },
-                ].map((badge) => (
-                  <motion.div
-                    key={badge.label}
-                    whileHover={{ scale: 1.1, rotate: [-1, 1, 0] }}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border-2 border-violet-100 shadow-sm text-xs font-bold text-slate-600"
-                  >
-                    <span>{badge.icon}</span>
-                    <span>{badge.label}</span>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* Right Column: Interactive Flashcard Showcase */}
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.7, delay: 0.3 }}
-              className="lg:col-span-5 flex flex-col items-center"
-            >
-              <div className="w-full max-w-sm sm:max-w-md space-y-4">
-                <div className="relative">
-                  {/* Decorative glowing back-ring */}
-                  <div className="absolute -inset-3 bg-gradient-to-r from-violet-500 via-pink-500 to-amber-400 rounded-[34px] opacity-25 blur-lg pointer-events-none" />
-                  
-                  <VocabularyFlashcard
-                    item={{
-                      id: 'hero-apple-card',
-                      word: 'Apfel',
-                      article: 'der',
-                      plural: 'Äpfel',
-                      level: 'A1',
-                      topic: 'Kapitel 4: Guten Appetit!',
-                      meaningEn: 'apple',
-                      meaningBn: 'আপেল',
-                      exampleGerman: 'Ich esse jeden Morgen einen frischen Apfel.',
-                      exampleTranslationEn: 'I eat a fresh apple every morning.',
-                      exampleTranslationBn: 'আমি প্রতিদিন সকালে একটি তাজা আপেল খাই।',
-                      partOfSpeech: 'Noun',
-                    }}
-                    playSpeech={playSpeech}
-                  />
-                </div>
-
-                {/* Explore Deck Link */}
-                <div className="text-center pt-1">
-                  <Link
-                    to="/vocabulary"
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/90 hover:bg-white text-violet-700 font-extrabold text-xs shadow-md border border-violet-100 hover:border-violet-300 transition-all hover:scale-105 group"
-                  >
-                    <span>🎴 Explore All 100+ Vocabulary Flashcards</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-violet-500 group-hover:translate-x-1 transition-transform" />
-                  </Link>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* ============ 4 CURRICULUM PILLARS ============ */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center space-y-3 max-w-3xl mx-auto mb-12"
-        >
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-extrabold bg-pink-100 text-pink-700 border-2 border-pink-200 uppercase tracking-wider">
-            <Sparkles className="w-3.5 h-3.5" />
-            4 Ways to Learn
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-slate-900 tracking-tight">
-            Your German Learning Adventure 🗺️
-          </h2>
-          <p className="text-sm sm:text-base text-slate-500 font-semibold">
-            Four fun learning paths to become a German language champion!
-          </p>
-        </motion.div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {PILLARS.map((pillar, idx) => (
-            <motion.div
-              key={pillar.to}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: idx * 0.1 }}
-            >
-              <Link
-                to={pillar.to}
-                className={`group card-playful p-6 flex flex-col justify-between space-y-5 ${pillar.hoverBorder} h-full`}
-              >
-                <div className="space-y-4">
-                  <motion.div
-                    whileHover={{ scale: 1.1, rotate: [0, -5, 5, 0] }}
-                    className={`w-16 h-16 rounded-2xl bg-gradient-to-tr ${pillar.gradient} text-white flex items-center justify-center shadow-lg ${pillar.shadow} text-3xl`}
-                  >
-                    {pillar.emoji}
-                  </motion.div>
-                  <div className="space-y-1">
-                    <span className={`text-[11px] font-extrabold ${pillar.textColor} uppercase tracking-wider`}>
-                      {pillar.module}
-                    </span>
-                    <h3 className={`text-xl font-display font-extrabold text-slate-900 group-hover:${pillar.textColor} transition-colors`}>
-                      {pillar.germanTitle}
-                    </h3>
-                    <p className="text-xs text-violet-500 font-bold">({pillar.title})</p>
-                  </div>
-                  <p className="text-xs text-slate-600 leading-relaxed font-semibold">
-                    {pillar.desc}
-                  </p>
-                </div>
-                <div className={`pt-4 border-t-2 border-slate-100 flex items-center justify-between text-xs font-extrabold ${pillar.textColor}`}>
-                  <span className="flex items-center gap-1">
-                    <Rocket className="w-3.5 h-3.5" />
-                    {pillar.cta}
-                  </span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" />
-                </div>
-              </Link>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* ============ CEFR LEVEL EXPLORER ============ */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 text-white rounded-[32px] p-6 sm:p-10 space-y-8 relative overflow-hidden"
-        >
-          {/* Background decorations */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl" />
-            <div className="absolute bottom-0 left-0 w-72 h-72 bg-pink-500/10 rounded-full blur-3xl" />
-            <motion.div animate={{ y: [0, -15, 0] }} transition={{ duration: 6, repeat: Infinity }} className="absolute top-10 right-20 text-2xl opacity-20">⭐</motion.div>
-            <motion.div animate={{ y: [0, 10, 0] }} transition={{ duration: 5, repeat: Infinity, delay: 1 }} className="absolute bottom-16 left-16 text-2xl opacity-15">🌟</motion.div>
-          </div>
-
-          <div className="relative z-10">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-amber-400 flex items-center gap-2">
-                  <Trophy className="w-4 h-4" />
-                  CEFR Level Explorer
-                </span>
-                <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-white">
-                  Choose Your Level! 🎯
-                </h2>
-              </div>
-              <span className="text-xs text-slate-400 max-w-xs font-semibold">
-                Aligned with Goethe-Institut & TestDaF examinations.
-              </span>
-            </div>
-
-            {/* CEFR Level Tabs */}
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2 mt-4 sm:mt-6 pb-2 sm:pb-4">
-              {CEFR_TABS.map((tab) => (
-                <motion.button
-                  key={tab.level}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setActiveTab(tab.level)}
-                  className={`py-2 sm:py-3 px-1 sm:px-2 rounded-xl sm:rounded-2xl font-extrabold text-center transition-all flex flex-col items-center justify-center gap-0.5 sm:gap-1 border-2 ${
-                    activeTab === tab.level
-                      ? 'bg-gradient-to-r ' + tab.color + ' text-white border-white/20 shadow-lg'
-                      : 'bg-slate-800/60 text-slate-400 border-slate-700/50 hover:bg-slate-800 hover:text-white hover:border-slate-600'
-                  }`}
+              {/* Dual CTA Buttons */}
+              <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+                <Link
+                  to="/curriculum"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm sm:text-base shadow-sm shadow-indigo-600/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 active:scale-98"
                 >
-                  <span className="text-lg sm:text-xl">{tab.emoji}</span>
-                  <span className="text-base sm:text-lg font-black">{tab.level}</span>
-                  <span className="text-[9px] sm:text-[10px] font-bold truncate w-full">{tab.title.split(' ')[0]}</span>
-                </motion.button>
-              ))}
+                  <span>Start Learning</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+
+                <a
+                  href="#learning-path"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 font-semibold text-sm sm:text-base border border-slate-200 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 active:scale-98"
+                >
+                  <Compass className="w-4 h-4 text-slate-500" />
+                  <span>Explore the Learning Path</span>
+                </a>
+              </div>
+
+              {/* Supporting Benefit Line */}
+              <p className="text-xs sm:text-sm text-slate-500 font-medium pt-1">
+                From A1 beginner foundations to advanced C2 German proficiency • Dedicated 60-day curriculum per level.
+              </p>
+
+              {/* Trust & Quality Badges */}
+              <div className="pt-3 border-t border-slate-100 flex items-center gap-4 sm:gap-6 flex-wrap text-xs text-slate-600 font-medium">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>Goethe-Zertifikat CEFR Standards</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>Native Speech Audio</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>English & Bengali Explanations</span>
+                </div>
+              </div>
             </div>
 
-            {/* Level Details Panel */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeLevelData.level}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3 }}
-                className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center mt-4"
-              >
-                <div className="lg:col-span-7 space-y-4">
-                  <div className="space-y-1">
+            {/* Right Column: Genuine Interactive German Grammar Preview Card */}
+            <div className="lg:col-span-5 flex flex-col items-center">
+              <div className="w-full max-w-lg bg-white rounded-2xl border border-slate-200/90 shadow-md p-5 sm:p-6 space-y-4">
+                {/* Header with Level & Mascot Reaction */}
+                <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                  <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-3xl">{activeLevelData.emoji}</span>
-                      <span className="text-2xl font-black text-white">{activeLevelData.level}</span>
-                      <span className="text-lg font-bold text-white">— {activeLevelData.title}</span>
+                      <span className="text-[11px] font-extrabold uppercase px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-100">
+                        {currentHeroChallenge.level}
+                      </span>
+                      <span className="text-xs font-semibold text-slate-500">
+                        Interactive Live Preview
+                      </span>
                     </div>
-                    <p className="text-xs font-semibold text-slate-400 italic">
-                      {activeLevelData.subtitle}
+                    <p className="text-xs text-slate-700 font-medium mt-1">
+                      {currentHeroChallenge.prompt}
                     </p>
                   </div>
 
-                  <p className="text-sm text-slate-300 leading-relaxed font-medium">
-                    {activeLevelData.desc}
+                  {/* Compact Felix Mascot Reaction */}
+                  <div className="shrink-0 flex items-center gap-1">
+                    <FelixMascot
+                      size="sm"
+                      state={mascotState}
+                      showBadge={false}
+                    />
+                  </div>
+                </div>
+
+                {/* Sentence with Highlighted Blank */}
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-center space-y-2">
+                  <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-wide flex items-center justify-center gap-2 flex-wrap">
+                    {currentHeroChallenge.sentencePre && (
+                      <span>{currentHeroChallenge.sentencePre}</span>
+                    )}
+                    <span className="px-3 py-1 rounded-md bg-white border border-slate-300 text-indigo-700 font-black shadow-inner min-w-[70px]">
+                      {heroSelectedAnswer || currentHeroChallenge.blank}
+                    </span>
+                    <span>{currentHeroChallenge.sentencePost}</span>
+                  </div>
+
+                  <button
+                    onClick={() => playSpeech(currentHeroChallenge.fullSentence)}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:underline pt-1"
+                    title="Listen to native pronunciation"
+                  >
+                    <Volume2 className="w-3.5 h-3.5" />
+                    <span>Listen: "{currentHeroChallenge.fullSentence}"</span>
+                  </button>
+                </div>
+
+                {/* Answer Options */}
+                <div className="space-y-1.5">
+                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    Select the correct answer:
                   </p>
-
-                  <div className="pt-2">
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="inline-block">
-                      <Link
-                        to={`/vocabulary?level=${activeLevelData.level}`}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-extrabold bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10"
-                      >
-                        <Rocket className="w-3.5 h-3.5 text-amber-400" />
-                        <span>Explore {activeLevelData.level} Vocabulary</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </Link>
-                    </motion.div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {currentHeroChallenge.options.map((option) => {
+                      const isSelected = heroSelectedAnswer === option;
+                      const isCorrect = option === currentHeroChallenge.correct;
+                      return (
+                        <button
+                          key={option}
+                          onClick={() => handleHeroSelect(option)}
+                          className={`py-2.5 px-3 rounded-xl font-bold text-sm transition-all border flex items-center justify-center gap-1.5 ${
+                            isSelected
+                              ? isCorrect
+                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                                : 'bg-rose-600 text-white border-rose-600 shadow-sm'
+                              : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/40'
+                          }`}
+                        >
+                          {isSelected && isCorrect && <Check className="w-3.5 h-3.5" />}
+                          <span>{option}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
-                <div className="lg:col-span-5 bg-slate-800/80 rounded-2xl p-5 border-2 border-slate-700/60 space-y-3">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-400">
-                    ⭐ Sample Word
-                  </span>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-xl font-display font-extrabold text-white">{activeLevelData.sampleWord}</h4>
-                      <p className="text-xs text-slate-400 font-semibold">{activeLevelData.meaning}</p>
-                    </div>
-                    <motion.button
-                      whileHover={{ scale: 1.15 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => playSpeech(activeLevelData.sampleWord)}
-                      className={`p-3 rounded-xl bg-gradient-to-r ${activeLevelData.color} text-white transition-colors shadow-md`}
-                      title="Listen"
+                {/* Immediate Rule Explanation */}
+                <AnimatePresence mode="wait">
+                  {heroSelectedAnswer && (
+                    <motion.div
+                      key={heroSelectedAnswer + heroIndex}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className={`p-3.5 rounded-xl border text-xs leading-relaxed space-y-1.5 ${
+                        heroSelectedAnswer === currentHeroChallenge.correct
+                          ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
+                          : 'bg-rose-50/70 border-rose-200 text-rose-900'
+                      }`}
                     >
-                      <Volume2 className="w-4 h-4" />
-                    </motion.button>
-                  </div>
-                  <div className="pt-2 border-t border-slate-700 text-xs text-slate-300 italic font-medium">
-                    ✏️ "{activeLevelData.sampleSentence}"
-                  </div>
-                </div>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* ============ INTERACTIVE ARTICLE QUIZ ============ */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="bg-white rounded-2xl sm:rounded-[32px] p-4 sm:p-8 border-2 border-violet-200 shadow-playful space-y-5 sm:space-y-6 relative overflow-hidden"
-        >
-          {/* Background decoration */}
-          <div className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-br from-pink-100 to-violet-100 rounded-full blur-xl opacity-60 pointer-events-none" />
-          <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-gradient-to-br from-amber-100 to-yellow-100 rounded-full blur-xl opacity-60 pointer-events-none" />
-
-          <div className="flex items-center justify-between relative z-10 gap-2">
-            <div className="flex items-center gap-2.5 sm:gap-3">
-              <motion.span
-                animate={{ rotate: [0, 15, -15, 0] }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-                className="text-2xl sm:text-3xl shrink-0"
-              >
-                🎯
-              </motion.span>
-              <div>
-                <h3 className="text-base sm:text-lg font-display font-extrabold text-slate-900 leading-tight">
-                  Quick Quiz: Der, Die, or Das?
-                </h3>
-                <p className="text-[11px] sm:text-xs text-violet-500 font-bold">Test your article knowledge!</p>
-              </div>
-            </div>
-            <span className="hidden xs:inline-flex text-[11px] sm:text-xs font-extrabold text-amber-700 bg-amber-100 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border-2 border-amber-200 items-center gap-1 shrink-0">
-              <Zap className="w-3 h-3" />
-              Quick Test
-            </span>
-          </div>
-
-          <div className="p-3.5 sm:p-6 bg-gradient-to-r from-violet-50 to-pink-50 rounded-2xl border-2 border-violet-100 space-y-4 sm:space-y-5 relative z-10">
-            <p className="text-xs sm:text-sm font-bold text-slate-500">
-              Welcher Artikel passt? (Which article fits?) 🤔
-            </p>
-            <p className="text-xl sm:text-2xl md:text-3xl font-display font-extrabold text-slate-900 leading-snug">
-              <span className="text-violet-600 underline decoration-wavy underline-offset-4 decoration-violet-300">
-                {interactiveQuizChoice ? interactiveQuizChoice.toUpperCase() : '______'}
-              </span>{' '}
-              Katze schläft auf dem Sofa. 🐱
-            </p>
-
-            <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-1 sm:pt-2">
-              {[
-                { article: 'der', color: 'blue', emoji: '💙' },
-                { article: 'die', color: 'pink', emoji: '💖' },
-                { article: 'das', color: 'emerald', emoji: '💚' },
-              ].map(({ article, color, emoji }) => (
-                <motion.button
-                  key={article}
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handleQuizChoice(article)}
-                  className={`py-2.5 sm:py-4 px-1 sm:px-3 rounded-xl sm:rounded-2xl text-xs sm:text-base font-black uppercase transition-all border-2 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2 ${
-                    interactiveQuizChoice === article
-                      ? article === 'die'
-                        ? 'bg-gradient-to-r from-emerald-400 to-green-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/30'
-                        : 'bg-gradient-to-r from-rose-400 to-red-500 text-white border-rose-500 shadow-lg shadow-rose-500/30'
-                      : `bg-white text-slate-700 border-slate-200 hover:border-${color}-300 hover:bg-${color}-50 shadow-sm`
-                  }`}
-                >
-                  <span className="text-base sm:text-lg">{emoji}</span>
-                  <span>{article}</span>
-                </motion.button>
-              ))}
-            </div>
-
-            {/* Feedback */}
-            <AnimatePresence>
-              {interactiveQuizChoice && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className={`p-5 rounded-2xl text-sm leading-relaxed flex items-start gap-3 border-2 ${
-                    interactiveQuizChoice === 'die'
-                      ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
-                      : 'bg-rose-50 text-rose-900 border-rose-200'
-                  }`}
-                >
-                  {interactiveQuizChoice === 'die' ? (
-                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1, rotate: 360 }} transition={{ type: 'spring' }}>
-                      <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
-                    </motion.div>
-                  ) : (
-                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring' }}>
-                      <XCircle className="w-6 h-6 text-rose-600 shrink-0 mt-0.5" />
+                      <div className="flex items-center gap-1.5 font-bold">
+                        {heroSelectedAnswer === currentHeroChallenge.correct ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <span>Richtig! Well done!</span>
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                            <span>Not quite right yet.</span>
+                          </>
+                        )}
+                      </div>
+                      <p className="text-slate-700">{currentHeroChallenge.explanationEn}</p>
+                      <p className="text-[11px] text-slate-500 font-medium">
+                        🇧🇩 {currentHeroChallenge.explanationBn}
+                      </p>
                     </motion.div>
                   )}
-                  <div>
-                    <p className="font-extrabold text-base">
-                      {interactiveQuizChoice === 'die'
-                        ? '🎉 Ausgezeichnet! "die Katze" ist richtig!'
-                        : '😅 Nicht ganz! Die richtige Antwort ist "die Katze".'}
-                    </p>
-                    <p className="mt-2 font-semibold text-xs">
-                      <strong>ব্যাকরণ ব্যাখ্যা:</strong> "Katze" (বিড়াল 🐱) একটি স্ত্রীলিঙ্গ (feminin) বিশেষ্য। জার্মান ভাষায় Feminin Noun-এর ক্ষেত্রে Nominativ একবচনে সর্বদা <strong>die</strong> ব্যবহৃত হয়।
-                    </p>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                </AnimatePresence>
+
+                {/* Card Footer: Rotate Question & Link to Lesson */}
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                  <button
+                    onClick={handleNextHeroChallenge}
+                    className="inline-flex items-center gap-1 text-slate-600 hover:text-slate-900 font-semibold"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Try another question ({heroIndex + 1}/3)</span>
+                  </button>
+
+                  <Link
+                    to="/curriculum/A1"
+                    className="inline-flex items-center gap-1 font-bold text-indigo-600 hover:text-indigo-700"
+                  >
+                    <span>Full A1 Lessons</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
-        </motion.div>
-      </section>
-
-      {/* ============ WHY LEARN WITH US ============ */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center space-y-3 max-w-3xl mx-auto mb-10"
-        >
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-extrabold bg-amber-100 text-amber-700 border-2 border-amber-200 uppercase tracking-wider">
-            <Heart className="w-3.5 h-3.5 fill-pink-500 text-pink-500" />
-            Why LingoVest?
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-slate-900">
-            Learning Made Fun & Easy! ✨
-          </h2>
-        </motion.div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[
-            {
-              emoji: '🎮',
-              title: 'Game-Like Learning',
-              desc: 'Interactive quizzes, drag-and-drop puzzles, and instant feedback make learning feel like playing a game!',
-              color: 'from-violet-500 to-purple-600',
-            },
-            {
-              emoji: '🔊',
-              title: 'Native Audio',
-              desc: 'Hear every word and sentence spoken by native German speakers at normal and slow speeds.',
-              color: 'from-blue-500 to-cyan-500',
-            },
-            {
-              emoji: '🇧🇩',
-              title: 'Bengali Explanations',
-              desc: 'Complete Bengali translations and grammar explanations to help you understand every concept deeply.',
-              color: 'from-pink-500 to-rose-500',
-            },
-          ].map((feature, idx) => (
-            <motion.div
-              key={feature.title}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: idx * 0.1 }}
-              className="card-playful p-6 text-center space-y-4"
-            >
-              <motion.div
-                whileHover={{ scale: 1.2, rotate: [0, -10, 10, 0] }}
-                className={`w-16 h-16 rounded-2xl bg-gradient-to-r ${feature.color} mx-auto flex items-center justify-center text-3xl shadow-lg`}
-              >
-                {feature.emoji}
-              </motion.div>
-              <h3 className="text-lg font-display font-extrabold text-slate-900">{feature.title}</h3>
-              <p className="text-xs text-slate-500 leading-relaxed font-semibold">{feature.desc}</p>
-            </motion.div>
-          ))}
         </div>
       </section>
 
-      {/* ============ CTA BANNER ============ */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="bg-gradient-to-r from-violet-600 via-purple-600 to-pink-500 rounded-[32px] p-8 sm:p-12 text-center text-white relative overflow-hidden"
-        >
-          {/* Decorative elements */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <motion.div animate={{ y: [0, -20, 0] }} transition={{ duration: 6, repeat: Infinity }} className="absolute top-6 left-[10%] text-3xl opacity-30">⭐</motion.div>
-            <motion.div animate={{ y: [0, 15, 0] }} transition={{ duration: 5, repeat: Infinity, delay: 1 }} className="absolute top-8 right-[15%] text-2xl opacity-25">✨</motion.div>
-            <motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 7, repeat: Infinity, delay: 2 }} className="absolute bottom-6 left-[30%] text-2xl opacity-25">🌟</motion.div>
-            <div className="absolute top-0 right-0 w-72 h-72 bg-white/5 rounded-full blur-3xl" />
-            <div className="absolute bottom-0 left-0 w-56 h-56 bg-white/5 rounded-full blur-3xl" />
+      {/* ========================================================
+          SECTION 2: THE A1–C2 LEARNING JOURNEY
+          Visual roadmap of the 6 CEFR worlds
+          ======================================================== */}
+      <section id="learning-path" className="py-16 lg:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="space-y-4 max-w-3xl mb-12 text-left">
+          <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-indigo-700">
+            <Compass className="w-4 h-4" />
+            <span>Structured CEFR Roadmap</span>
+          </div>
+          <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
+            Your path to German proficiency
+          </h2>
+          <p className="text-base text-slate-600 leading-relaxed font-normal">
+            Start where you are and build your skills step by step. Every level features a dedicated <strong>60-day plan</strong> with guided grammar, vocabulary, audio dialogue, and Goethe exam practice.
+          </p>
+        </div>
+
+        {/* 6 Level Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {CEFR_LEVELS_DATA.map((lvl) => {
+            const isCurrentSelected = selectedCefrCode === lvl.code;
+            return (
+              <div
+                key={lvl.code}
+                onMouseEnter={() => setSelectedCefrCode(lvl.code)}
+                className={`bg-white rounded-2xl border p-6 transition-all duration-200 flex flex-col justify-between space-y-5 ${
+                  lvl.colorScheme.border
+                } ${isCurrentSelected ? 'shadow-md ring-1 ring-indigo-200' : 'shadow-sm'}`}
+              >
+                <div className="space-y-3">
+                  {/* Top Bar: Level Code & Days Count */}
+                  <div className="flex items-center justify-between">
+                    <span className={`text-xs font-black px-2.5 py-1 rounded-md border ${lvl.colorScheme.badge}`}>
+                      {lvl.code} • {lvl.cefrTitle}
+                    </span>
+                    <span className="text-xs font-bold text-slate-400">
+                      {lvl.daysCount} Days
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900 flex items-center justify-between">
+                      <span>{lvl.name}</span>
+                      <span className="text-xs font-normal text-slate-400 italic">
+                        {lvl.germanTitle}
+                      </span>
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {lvl.topicsCount}
+                    </p>
+                  </div>
+
+                  <p className="text-xs text-slate-600 leading-relaxed font-normal">
+                    {lvl.description}
+                  </p>
+
+                  {/* Sample Sentence Preview */}
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold text-slate-800">
+                        "{lvl.samplePhrase.german}"
+                      </p>
+                      <button
+                        onClick={() => playSpeech(lvl.samplePhrase.german)}
+                        className="p-1 rounded text-slate-400 hover:text-indigo-600 transition-colors"
+                        title="Pronounce sample sentence"
+                        aria-label={`Listen to ${lvl.code} sample sentence`}
+                      >
+                        <Volume2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      {lvl.samplePhrase.english}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Card Action Link */}
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-[11px] font-medium text-slate-500">
+                    {lvl.milestone}
+                  </span>
+                  <Link
+                    to={lvl.link}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-700 hover:underline shrink-0 ml-2"
+                  >
+                    <span>Explore {lvl.code}</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* 60-Day schedule clarification note */}
+        <div className="mt-8 p-4 rounded-xl bg-slate-100/80 border border-slate-200/90 flex items-start sm:items-center gap-3">
+          <GraduationCap className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5 sm:mt-0" />
+          <p className="text-xs text-slate-600 leading-relaxed">
+            <strong>Curriculum Schedule:</strong> Each CEFR stage (A1, A2, B1, B2, C1, C2) is structured with its own 60-day calendar plan. Advance at your own pace — review rules anytime or fast-track through concepts you have already mastered.
+          </p>
+        </div>
+      </section>
+
+      {/* ========================================================
+          SECTION 3: TRY A LESSON (INTERACTIVE GRAMMAR CHALLENGE)
+          Direct exercise tryout with level selector
+          ======================================================== */}
+      <section className="py-16 lg:py-20 bg-white border-y border-slate-200/80">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          <div className="text-center space-y-2 max-w-xl mx-auto">
+            <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
+              Interactive Grammar Sandbox
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Test your German grammar right here
+            </h2>
+            <p className="text-sm text-slate-600">
+              Select any level below to experience our instant visual feedback and grammatical explanations.
+            </p>
           </div>
 
-          <div className="relative z-10 space-y-5">
-            <motion.div
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-              className="text-5xl"
-            >
-              🚀
-            </motion.div>
-            <h2 className="text-3xl sm:text-4xl font-display font-extrabold">
-              Ready to Start Your German Adventure?
-            </h2>
-            <p className="text-base text-white/80 font-semibold max-w-xl mx-auto">
-              Join thousands of learners mastering German with fun, interactive lessons. It's free to get started!
-            </p>
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="inline-block pt-2"
-            >
-              <Link
-                to="/signup"
-                className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-white text-violet-700 font-extrabold text-lg shadow-xl hover:shadow-2xl transition-all"
+          {/* Level Switcher Tabs */}
+          <div className="flex items-center justify-center gap-2 p-1 bg-slate-100 rounded-xl max-w-sm mx-auto">
+            {(['A1', 'A2', 'B1', 'B2'] as const).map((lvl) => (
+              <button
+                key={lvl}
+                onClick={() => {
+                  setTryoutLevel(lvl);
+                  setTryoutChoice(null);
+                }}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  tryoutLevel === lvl
+                    ? 'bg-white text-indigo-700 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
               >
-                <Sparkles className="w-5 h-5 text-amber-500" />
-                Start Learning for Free!
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-            </motion.div>
+                {lvl} Level
+              </button>
+            ))}
           </div>
-        </motion.div>
+
+          {/* Interactive Question Card */}
+          <div className="p-6 sm:p-8 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-200/80 pb-3">
+              <span className="text-xs font-bold text-slate-700">
+                {currentTryout.title}
+              </span>
+              <button
+                onClick={() => playSpeech(currentTryout.question.replace('___', ''))}
+                className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700"
+              >
+                <Volume2 className="w-3.5 h-3.5" />
+                <span>Audio</span>
+              </button>
+            </div>
+
+            {/* German Question Prompt */}
+            <div className="text-center py-2">
+              <p className="text-xl sm:text-2xl font-bold text-slate-900 tracking-wide">
+                {currentTryout.question.split('___')[0]}
+                <span className="inline-block px-3 py-0.5 mx-1.5 rounded-md bg-white border border-slate-300 text-indigo-600 underline font-black">
+                  {tryoutChoice || '___'}
+                </span>
+                {currentTryout.question.split('___')[1]}
+              </p>
+              <p className="text-xs text-slate-500 italic mt-2">
+                Meaning: "{currentTryout.translation}"
+              </p>
+            </div>
+
+            {/* Answer Options */}
+            <div className="grid grid-cols-3 gap-2.5 max-w-md mx-auto">
+              {currentTryout.options.map((opt) => {
+                const isSelected = tryoutChoice === opt;
+                const isCorrect = opt === currentTryout.correct;
+                return (
+                  <button
+                    key={opt}
+                    onClick={() => handleTryoutSelect(opt)}
+                    className={`py-3 px-4 rounded-xl text-sm font-bold transition-all border ${
+                      isSelected
+                        ? isCorrect
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                          : 'bg-rose-600 text-white border-rose-600 shadow-sm'
+                        : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50 shadow-sm'
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Feedback Box */}
+            {tryoutChoice && (
+              <motion.div
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`p-4 rounded-xl border text-xs leading-relaxed space-y-1.5 ${
+                  tryoutChoice === currentTryout.correct
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-950'
+                    : 'bg-rose-50 border-rose-200 text-rose-950'
+                }`}
+              >
+                <p className="font-bold">
+                  {tryoutChoice === currentTryout.correct
+                    ? 'Ausgezeichnet! That is correct.'
+                    : 'Not quite. Check the rule explanation:'}
+                </p>
+                <p className="text-slate-700">{currentTryout.explanation}</p>
+                <p className="text-[11px] text-slate-500 font-medium pt-0.5">
+                  🇧🇩 {currentTryout.bengaliNote}
+                </p>
+              </motion.div>
+            )}
+
+            <div className="pt-2 text-center">
+              <Link
+                to={`/curriculum/${tryoutLevel}`}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-700 hover:underline"
+              >
+                <span>Continue to Day 1 lessons in {tryoutLevel}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================
+          SECTION 4: HOW IT WORKS
+          3 Pedagogical Steps
+          ======================================================== */}
+      <section className="py-16 lg:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center space-y-3 max-w-2xl mx-auto mb-14">
+          <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
+            Pedagogical Method
+          </span>
+          <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
+            How learning with LingoVest works
+          </h2>
+          <p className="text-sm sm:text-base text-slate-600">
+            A proven three-step learning cycle that builds long-term retention and confidence.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Step 1 */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 p-6 space-y-4 shadow-sm">
+            <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-black text-lg">
+              01
+            </div>
+            <h3 className="text-lg font-bold text-slate-900">
+              1. Learn the Grammar Concept
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+              Each day introduces one bite-sized grammatical rule with visual tables, clear examples, and dual English & Bengali explanations.
+            </p>
+          </div>
+
+          {/* Step 2 */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 p-6 space-y-4 shadow-sm">
+            <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-black text-lg">
+              02
+            </div>
+            <h3 className="text-lg font-bold text-slate-900">
+              2. Practice with Interactive Drills
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+              Test your understanding immediately through sentence scrambles, article exercises (der/die/das), and listening dictations with instant feedback.
+            </p>
+          </div>
+
+          {/* Step 3 */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 p-6 space-y-4 shadow-sm">
+            <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-black text-lg">
+              03
+            </div>
+            <h3 className="text-lg font-bold text-slate-900">
+              3. Review with Spaced Repetition
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+              Reinforce learned vocabulary with visual flashcards and scheduled reviews to ensure knowledge moves into permanent long-term memory.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================
+          SECTION 5: FEATURED LEARNING CAPABILITIES
+          Grid of real, implemented platform features
+          ======================================================== */}
+      <section className="py-16 lg:py-20 bg-white border-y border-slate-200/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          <div className="text-left max-w-2xl space-y-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
+              Platform Features
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Everything you need to master German
+            </h2>
+            <p className="text-sm text-slate-600">
+              Designed for serious study without unnecessary fluff or noisy distractions.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Feature 1 */}
+            <div className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-3">
+              <div className="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center">
+                <BookOpen className="w-5 h-5" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900">
+                Systematic CEFR Grammar
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Rules, declensions, modal verbs, and subordinate clauses aligned with official Goethe-Zertifikat requirements.
+              </p>
+              <Link to="/grammar" className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:underline pt-1">
+                <span>View Grammar Library</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            {/* Feature 2 */}
+            <div className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-3">
+              <div className="w-10 h-10 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900">
+                Visual Flashcard System
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Dynamic vocabulary images, color-coded genders (der, die, das), example sentences, and audio pronunciation.
+              </p>
+              <Link to="/vocabulary" className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:underline pt-1">
+                <span>Open Flashcards</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-3">
+              <div className="w-10 h-10 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center">
+                <Headphones className="w-5 h-5" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900">
+                Listening & Reading Labs
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Graded German short stories and dialogue audio tracks designed to train your ear and reading comprehension.
+              </p>
+              <Link to="/reading" className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:underline pt-1">
+                <span>Explore Stories</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            {/* Feature 4 */}
+            <div className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-3">
+              <div className="w-10 h-10 rounded-lg bg-pink-100 text-pink-700 flex items-center justify-center">
+                <HelpCircle className="w-5 h-5" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900">
+                Quizzes Arena
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Test your article recall, fill in missing verb forms, and solve sentence order challenges with instant feedback.
+              </p>
+              <Link to="/quizzes" className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:underline pt-1">
+                <span>Play Quizzes</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================
+          SECTION 6: CLOSING CALL TO ACTION
+          Motivating, clean SaaS closing banner
+          ======================================================== */}
+      <section className="py-16 lg:py-24 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+        <div className="p-8 sm:p-12 rounded-3xl bg-slate-900 text-white space-y-6 relative overflow-hidden shadow-lg border border-slate-800">
+          <div className="max-w-2xl mx-auto space-y-3 relative z-10">
+            <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest">
+              START YOUR 60-DAY SCHEDULE
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
+              Make your next German lesson count.
+            </h2>
+            <p className="text-sm sm:text-base text-slate-400 leading-relaxed font-normal">
+              Build a consistent learning habit and take the next step in your German journey. Whether starting fresh at A1 or preparing for the Goethe-Zertifikat B1 exam, LingoVest guides you every day.
+            </p>
+          </div>
+
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3 relative z-10">
+            <Link
+              to="/curriculum"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 active:scale-98"
+            >
+              <span>Start Learning Now</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+
+            <Link
+              to="/grammar"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm border border-slate-700 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 active:scale-98"
+            >
+              <BookOpen className="w-4 h-4 text-slate-400" />
+              <span>Browse Grammar Library</span>
+            </Link>
+          </div>
+        </div>
       </section>
     </div>
   );

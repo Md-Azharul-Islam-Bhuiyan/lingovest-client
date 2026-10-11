@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -11,9 +11,11 @@ import {
   LogOut,
   LayoutDashboard,
   ChevronDown,
-  Star,
-  Rocket,
   Compass,
+  Sparkles,
+  ArrowRight,
+  User,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -30,14 +32,14 @@ import { useAppDispatch, useAppSelector } from '@/redux/hook';
 import { TCurrentUser } from '@/types/commonTypes';
 import { toast } from 'sonner';
 
-const NAV_LINKS = [
-  { to: '/', label: 'Home', icon: null, emoji: '🏠' },
-  { to: '/curriculum', label: 'Lernwelten', icon: Compass, emoji: '🗺️', color: 'text-violet-600' },
-  { to: '/grammar', label: 'Grammatik', icon: BookOpen, emoji: '📖', color: 'text-indigo-600' },
-  { to: '/vocabulary', label: 'Words', icon: BookOpen, emoji: '📚', color: 'text-emerald-600' },
-  { to: '/reading', label: 'Stories', icon: FileText, emoji: '📑', color: 'text-blue-600' },
-  { to: '/listening', label: 'Listen', icon: Headphones, emoji: '🎧', color: 'text-teal-600' },
-  { to: '/quizzes', label: 'Quizzes', icon: HelpCircle, emoji: '🧩', color: 'text-pink-600' },
+// CEFR Level shortcuts
+const CEFR_LEVEL_SHORTCUTS = [
+  { level: 'A1', name: 'Starter Village', to: '/curriculum/A1', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
+  { level: 'A2', name: 'Grammar Forest', to: '/curriculum/A2', color: 'text-sky-700 bg-sky-50 border-sky-200' },
+  { level: 'B1', name: 'Vocab Island', to: '/curriculum/B1', color: 'text-indigo-700 bg-indigo-50 border-indigo-200' },
+  { level: 'B2', name: 'Grammar Castle', to: '/curriculum/B2', color: 'text-amber-700 bg-amber-50 border-amber-200' },
+  { level: 'C1', name: 'Fluency City', to: '/curriculum/C1', color: 'text-rose-700 bg-rose-50 border-rose-200' },
+  { level: 'C2', name: 'Master’s Kingdom', to: '/curriculum/C2', color: 'text-purple-700 bg-purple-50 border-purple-200' },
 ];
 
 const Navbar = () => {
@@ -45,6 +47,11 @@ const Navbar = () => {
   const location = useLocation();
   const dispatch = useAppDispatch();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileSection, setMobileSection] = useState<'learn' | 'practice' | 'resources'>('learn');
+
+  // Desktop Dropdown Open states for controlled hover/click experience
+  const [openDropdown, setOpenDropdown] = useState<'learn' | 'practice' | 'resources' | null>(null);
+  const dropdownTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const currentUser = useAppSelector(useCurrentUser) as TCurrentUser | null;
   const { data: logoData } = useGetActiveLogoQuery(undefined);
@@ -53,32 +60,74 @@ const Navbar = () => {
   const isSuperAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
   const isStaff = role === 'STAFF';
 
-  // Close mobile drawer on route change
+  // Close menus on route change
   useEffect(() => {
     setMobileMenuOpen(false);
+    setOpenDropdown(null);
   }, [location.pathname]);
+
+  // Handle escape key to dismiss dropdowns
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpenDropdown(null);
+        setMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleDropdownEnter = (menu: 'learn' | 'practice' | 'resources') => {
+    if (dropdownTimerRef.current) clearTimeout(dropdownTimerRef.current);
+    setOpenDropdown(menu);
+  };
+
+  const handleDropdownLeave = () => {
+    dropdownTimerRef.current = setTimeout(() => {
+      setOpenDropdown(null);
+    }, 150);
+  };
 
   const handleLogout = () => {
     dispatch(logout());
-    toast.success('Auf Wiedersehen! 👋 See you soon!', {
-      duration: 2000,
-      icon: '🌟',
+    toast.success('Auf Wiedersehen! See you soon!', {
+      duration: 2500,
+      icon: '👋',
     });
     navigate('/');
   };
 
+  const isLearnActive =
+    location.pathname.startsWith('/curriculum') ||
+    location.pathname.startsWith('/grammar') ||
+    location.pathname.startsWith('/vocabulary');
+
+  const isPracticeActive =
+    location.pathname.startsWith('/quizzes') ||
+    location.pathname.startsWith('/reading') ||
+    location.pathname.startsWith('/listening');
+
+  const isResourcesActive =
+    location.pathname.startsWith('/blogs') ||
+    location.pathname.startsWith('/faq') ||
+    location.pathname.startsWith('/about-us') ||
+    location.pathname.startsWith('/support');
+
   return (
-    <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b-2 border-violet-100 shadow-sm transition-all">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-[68px] flex items-center justify-between gap-2 sm:gap-4">
-        {/* Brand Logo — Playful */}
-        <Link to="/" className="flex items-center gap-2 sm:gap-3 group shrink-0 py-2 sm:py-3">
-          <motion.div
-            whileHover={{ rotate: [0, -10, 10, -5, 0], scale: 1.1 }}
-            transition={{ duration: 0.5 }}
-            className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-md sm:shadow-lg overflow-hidden shrink-0 ${
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 transition-all">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-[68px] flex items-center justify-between gap-4">
+        {/* Brand Logo & Wordmark */}
+        <Link
+          to="/"
+          className="flex items-center gap-3 group shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-xl"
+          aria-label="LingoVest Homepage"
+        >
+          <div
+            className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 overflow-hidden shrink-0 ${
               activeLogoUrl
-                ? 'bg-white p-0.5 sm:p-1 border border-violet-100 shadow-violet-500/10'
-                : 'bg-gradient-to-tr from-violet-600 via-purple-500 to-pink-500 text-white shadow-violet-500/30'
+                ? 'bg-white p-1 border border-slate-200 shadow-sm'
+                : 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/20'
             }`}
           >
             {activeLogoUrl ? (
@@ -88,175 +137,459 @@ const Navbar = () => {
                 className="w-full h-full object-contain"
               />
             ) : (
-              <span className="text-lg sm:text-xl">🇩🇪</span>
+              <span className="text-xl">🇩🇪</span>
             )}
-          </motion.div>
+          </div>
           <div>
-            <div className="flex items-center gap-1">
-              <span className="text-lg sm:text-xl font-display font-extrabold tracking-tight text-slate-900 group-hover:text-violet-600 transition-colors">
+            <div className="flex items-center gap-1.5">
+              <span className="text-lg sm:text-xl font-bold font-display tracking-tight text-slate-900 group-hover:text-indigo-600 transition-colors">
                 LingoVest
               </span>
-              <motion.span
-                animate={{ rotate: [0, 15, -15, 0] }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-                className="text-base sm:text-lg"
-              >
-                ✨
-              </motion.span>
+              <span className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                A1–C2
+              </span>
             </div>
-            <p className="text-[9px] sm:text-[10px] font-bold text-violet-400 uppercase tracking-widest -mt-0.5">
-              Fun German Academy
+            <p className="text-[10px] font-medium text-slate-500 tracking-wider">
+              German Learning Academy
             </p>
           </div>
         </Link>
 
-        {/* Desktop Navigation Links */}
-        <nav className="hidden lg:flex items-center gap-1">
-          {NAV_LINKS.map((link) => {
-            const isActive = location.pathname === link.to;
-            return (
-              <Link
-                key={link.to}
-                to={link.to}
-                className={`relative px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 group ${
-                  isActive
-                    ? 'text-violet-700 bg-violet-50 shadow-sm shadow-violet-200'
-                    : 'text-slate-600 hover:text-violet-700 hover:bg-violet-50/60'
+        {/* Desktop Simplified Navigation */}
+        <nav
+          className="hidden md:flex items-center gap-1"
+          aria-label="Primary Navigation"
+        >
+          {/* Learn Dropdown */}
+          <div
+            className="relative"
+            onMouseEnter={() => handleDropdownEnter('learn')}
+            onMouseLeave={handleDropdownLeave}
+          >
+            <button
+              onClick={() => setOpenDropdown(openDropdown === 'learn' ? null : 'learn')}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                isLearnActive || openDropdown === 'learn'
+                  ? 'text-indigo-700 bg-indigo-50/70'
+                  : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100/70'
+              }`}
+              aria-expanded={openDropdown === 'learn'}
+              aria-haspopup="true"
+            >
+              <span>Learn</span>
+              <ChevronDown
+                className={`w-4 h-4 transition-transform duration-200 text-slate-400 ${
+                  openDropdown === 'learn' ? 'rotate-180 text-indigo-600' : ''
                 }`}
-              >
-                <span className="text-base group-hover:scale-125 transition-transform inline-block">
-                  {link.emoji}
-                </span>
-                <span className="font-extrabold">{link.label}</span>
-                {isActive && (
-                  <motion.div
-                    layoutId="navActiveIndicator"
-                    className="absolute bottom-0 left-3 right-3 h-[3px] rounded-full bg-gradient-to-r from-violet-500 to-pink-500"
-                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                  />
-                )}
-              </Link>
-            );
-          })}
+              />
+            </button>
+
+            <AnimatePresence>
+              {openDropdown === 'learn' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                  transition={{ duration: 0.16, ease: 'easeOut' }}
+                  className="absolute top-full left-0 mt-1 w-[460px] bg-white rounded-2xl shadow-xl border border-slate-200/90 p-4 z-50 focus:outline-none"
+                  role="menu"
+                >
+                  <div className="space-y-1 mb-3">
+                    <Link
+                      to="/curriculum"
+                      onClick={() => setOpenDropdown(null)}
+                      className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors group"
+                      role="menuitem"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                        <Compass className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 flex items-center gap-1.5">
+                          <span>Guided Learning Worlds</span>
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700">60 Days/Level</span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Structured daily lessons from A1 foundations to C2 mastery with mascot Felix.
+                        </p>
+                      </div>
+                    </Link>
+
+                    <Link
+                      to="/grammar"
+                      onClick={() => setOpenDropdown(null)}
+                      className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors group"
+                      role="menuitem"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                        <BookOpen className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-slate-900 group-hover:text-emerald-600">
+                          Grammar Library
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          In-depth rules, declension charts, verb conjugations, and clear explanations.
+                        </p>
+                      </div>
+                    </Link>
+
+                    <Link
+                      to="/vocabulary"
+                      onClick={() => setOpenDropdown(null)}
+                      className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors group"
+                      role="menuitem"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                        <Sparkles className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-slate-900 group-hover:text-amber-600">
+                          Vocabulary Flashcards
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Visual cards with color-coded articles, dynamic imagery, and native German audio.
+                        </p>
+                      </div>
+                    </Link>
+                  </div>
+
+                  {/* Direct CEFR shortcuts */}
+                  <div className="pt-3 border-t border-slate-100">
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-1">
+                      Jump to CEFR Level (60 Days Each)
+                    </p>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {CEFR_LEVEL_SHORTCUTS.map((item) => (
+                        <Link
+                          key={item.level}
+                          to={item.to}
+                          onClick={() => setOpenDropdown(null)}
+                          className="px-2.5 py-1.5 rounded-lg border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/50 transition-all flex items-center gap-2 group"
+                        >
+                          <span className={`text-[11px] font-black px-1.5 py-0.5 rounded border ${item.color}`}>
+                            {item.level}
+                          </span>
+                          <span className="text-xs font-semibold text-slate-700 truncate group-hover:text-indigo-700">
+                            {item.name}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Practice Dropdown */}
+          <div
+            className="relative"
+            onMouseEnter={() => handleDropdownEnter('practice')}
+            onMouseLeave={handleDropdownLeave}
+          >
+            <button
+              onClick={() => setOpenDropdown(openDropdown === 'practice' ? null : 'practice')}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                isPracticeActive || openDropdown === 'practice'
+                  ? 'text-indigo-700 bg-indigo-50/70'
+                  : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100/70'
+              }`}
+              aria-expanded={openDropdown === 'practice'}
+              aria-haspopup="true"
+            >
+              <span>Practice</span>
+              <ChevronDown
+                className={`w-4 h-4 transition-transform duration-200 text-slate-400 ${
+                  openDropdown === 'practice' ? 'rotate-180 text-indigo-600' : ''
+                }`}
+              />
+            </button>
+
+            <AnimatePresence>
+              {openDropdown === 'practice' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                  transition={{ duration: 0.16, ease: 'easeOut' }}
+                  className="absolute top-full left-0 mt-1 w-80 bg-white rounded-2xl shadow-xl border border-slate-200/90 p-3 z-50 focus:outline-none"
+                  role="menu"
+                >
+                  <div className="space-y-1">
+                    <Link
+                      to="/quizzes"
+                      onClick={() => setOpenDropdown(null)}
+                      className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors group"
+                      role="menuitem"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-pink-50 text-pink-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-pink-600 group-hover:text-white transition-colors">
+                        <HelpCircle className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-slate-900 group-hover:text-pink-600">
+                          Quizzes Arena
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          Article practice (der/die/das), sentence scrambles, and fill-in-blanks.
+                        </p>
+                      </div>
+                    </Link>
+
+                    <Link
+                      to="/reading"
+                      onClick={() => setOpenDropdown(null)}
+                      className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors group"
+                      role="menuitem"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                        <FileText className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-slate-900 group-hover:text-blue-600">
+                          Reading Stories
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          Graded German short stories with comprehension checks and vocabulary tips.
+                        </p>
+                      </div>
+                    </Link>
+
+                    <Link
+                      to="/listening"
+                      onClick={() => setOpenDropdown(null)}
+                      className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors group"
+                      role="menuitem"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-teal-600 group-hover:text-white transition-colors">
+                        <Headphones className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-slate-900 group-hover:text-teal-600">
+                          Listening Labs
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          Dialogue audio scripts, dictation exercises, and ear-training quizzes.
+                        </p>
+                      </div>
+                    </Link>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Resources Dropdown */}
+          <div
+            className="relative"
+            onMouseEnter={() => handleDropdownEnter('resources')}
+            onMouseLeave={handleDropdownLeave}
+          >
+            <button
+              onClick={() => setOpenDropdown(openDropdown === 'resources' ? null : 'resources')}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                isResourcesActive || openDropdown === 'resources'
+                  ? 'text-indigo-700 bg-indigo-50/70'
+                  : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100/70'
+              }`}
+              aria-expanded={openDropdown === 'resources'}
+              aria-haspopup="true"
+            >
+              <span>Resources</span>
+              <ChevronDown
+                className={`w-4 h-4 transition-transform duration-200 text-slate-400 ${
+                  openDropdown === 'resources' ? 'rotate-180 text-indigo-600' : ''
+                }`}
+              />
+            </button>
+
+            <AnimatePresence>
+              {openDropdown === 'resources' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                  transition={{ duration: 0.16, ease: 'easeOut' }}
+                  className="absolute top-full left-0 mt-1 w-72 bg-white rounded-2xl shadow-xl border border-slate-200/90 p-3 z-50 focus:outline-none"
+                  role="menu"
+                >
+                  <div className="space-y-1">
+                    <Link
+                      to="/blogs"
+                      onClick={() => setOpenDropdown(null)}
+                      className="flex items-center gap-2.5 p-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
+                      role="menuitem"
+                    >
+                      <span className="text-base">📰</span>
+                      <span>German Guides & Blog</span>
+                    </Link>
+
+                    <Link
+                      to="/faq"
+                      onClick={() => setOpenDropdown(null)}
+                      className="flex items-center gap-2.5 p-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
+                      role="menuitem"
+                    >
+                      <span className="text-base">❓</span>
+                      <span>Frequently Asked Questions</span>
+                    </Link>
+
+                    <Link
+                      to="/about-us"
+                      onClick={() => setOpenDropdown(null)}
+                      className="flex items-center gap-2.5 p-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
+                      role="menuitem"
+                    >
+                      <span className="text-base">🏛️</span>
+                      <span>About LingoVest Academy</span>
+                    </Link>
+
+                    <Link
+                      to="/support"
+                      onClick={() => setOpenDropdown(null)}
+                      className="flex items-center gap-2.5 p-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
+                      role="menuitem"
+                    >
+                      <span className="text-base">💬</span>
+                      <span>Learner Support & Feedback</span>
+                    </Link>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </nav>
 
-        {/* Right Action Suite */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {/* Super Admin Shortcut CTA */}
+        {/* Right Action Area */}
+        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+          {/* Admin shortcut */}
           {isSuperAdmin && (
             <Link
               to="/dashboard/admin/overview"
-              className="hidden md:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 shadow-md shadow-violet-500/25 transition-all transform hover:-translate-y-0.5"
+              className="hidden xl:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors"
             >
-              <LayoutDashboard className="w-3.5 h-3.5 text-amber-300" />
-              <span>Admin Panel</span>
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              <span>Admin</span>
             </Link>
           )}
 
-          {/* Staff Shortcut CTA */}
+          {/* Staff shortcut */}
           {isStaff && (
             <Link
               to="/dashboard/staff/overview"
-              className="hidden md:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 shadow-md shadow-teal-500/25 transition-all transform hover:-translate-y-0.5"
+              className="hidden xl:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition-colors"
             >
-              <LayoutDashboard className="w-3.5 h-3.5 text-emerald-200" />
-              <span>Staff Portal</span>
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              <span>Staff</span>
             </Link>
           )}
 
-          {/* User Auth Controls */}
+          {/* User Auth or CTA */}
           {currentUser ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex items-center gap-1.5 sm:gap-2 p-1 sm:p-1.5 sm:pr-3 rounded-xl border-2 border-violet-200 hover:border-violet-300 bg-violet-50/50 hover:bg-violet-50 transition-all focus:outline-none"
-                >
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-violet-500 to-pink-500 text-white flex items-center justify-center font-extrabold text-xs uppercase shadow-sm">
-                    {currentUser.name ? currentUser.name.charAt(0) : '🌟'}
+            <div className="flex items-center gap-2">
+              <Link
+                to="/curriculum"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              >
+                <span>Continue Learning</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="flex items-center gap-2 p-1.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-slate-50 hover:bg-slate-100 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                    aria-label="User account menu"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm">
+                      {currentUser.name ? currentUser.name.charAt(0) : 'U'}
+                    </div>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-500 pr-0.5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-60 p-2 rounded-2xl shadow-xl border-slate-200 bg-white">
+                  <div className="px-3 py-2 border-b border-slate-100 bg-slate-50 rounded-xl mb-1">
+                    <p className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-indigo-600" />
+                      {currentUser.name || 'Learner'}
+                    </p>
+                    <p className="text-[11px] text-slate-500 truncate">{currentUser.email}</p>
+                    <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800 uppercase">
+                      {role || 'LEARNER'}
+                    </span>
                   </div>
-                  <span className="text-xs font-bold text-slate-700 hidden sm:inline max-w-[90px] truncate">
-                    {currentUser.name || 'Account'}
-                  </span>
-                  <ChevronDown className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-violet-400" />
-                </motion.button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-60 p-2 rounded-2xl shadow-xl border-violet-100 bg-white">
-                <div className="px-3 py-2.5 border-b border-violet-100 bg-gradient-to-r from-violet-50 to-pink-50 rounded-xl mb-1">
-                  <p className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
-                    <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                    {currentUser.name || 'German Learner'}
-                  </p>
-                  <p className="text-[11px] text-slate-500 truncate">{currentUser.email}</p>
-                  <span className="inline-block mt-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-violet-100 text-violet-700 uppercase">
-                    {role || 'USER'}
-                  </span>
-                </div>
 
-                {isSuperAdmin && (
                   <DropdownMenuItem asChild>
                     <Link
-                      to="/dashboard/admin/overview"
-                      className="flex items-center gap-2 px-3 py-2.5 text-xs font-bold text-slate-700 rounded-xl hover:bg-violet-50 hover:text-violet-700 cursor-pointer transition-colors"
+                      to="/curriculum"
+                      className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 rounded-lg hover:bg-slate-50 cursor-pointer"
                     >
-                      <LayoutDashboard className="w-4 h-4 text-violet-500" />
-                      <span>Admin Dashboard</span>
-                      <Rocket className="w-3 h-3 text-amber-500 ml-auto" />
+                      <Compass className="w-4 h-4 text-indigo-600" />
+                      <span>My Learning Path</span>
                     </Link>
                   </DropdownMenuItem>
-                )}
 
-                {isStaff && (
-                  <DropdownMenuItem asChild>
-                    <Link
-                      to="/dashboard/staff/overview"
-                      className="flex items-center gap-2 px-3 py-2.5 text-xs font-bold text-slate-700 rounded-xl hover:bg-teal-50 hover:text-teal-700 cursor-pointer transition-colors"
-                    >
-                      <LayoutDashboard className="w-4 h-4 text-teal-600" />
-                      <span>Staff Portal</span>
-                    </Link>
+                  {isSuperAdmin && (
+                    <DropdownMenuItem asChild>
+                      <Link
+                        to="/dashboard/admin/overview"
+                        className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 rounded-lg hover:bg-slate-50 cursor-pointer"
+                      >
+                        <ShieldCheck className="w-4 h-4 text-indigo-600" />
+                        <span>Admin Console</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+
+                  {isStaff && (
+                    <DropdownMenuItem asChild>
+                      <Link
+                        to="/dashboard/staff/overview"
+                        className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 rounded-lg hover:bg-slate-50 cursor-pointer"
+                      >
+                        <LayoutDashboard className="w-4 h-4 text-teal-600" />
+                        <span>Staff Console</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-rose-600 rounded-lg hover:bg-rose-50 cursor-pointer mt-1"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Sign Out</span>
                   </DropdownMenuItem>
-                )}
-
-                <DropdownMenuItem
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 px-3 py-2.5 text-xs font-bold text-rose-500 rounded-xl hover:bg-rose-50 cursor-pointer mt-1 transition-colors"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Tschüss! Sign Out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           ) : (
-            <div className="hidden sm:flex items-center gap-2">
+            <div className="flex items-center gap-2 sm:gap-3">
               <Link
                 to="/login"
-                className="px-3.5 py-2 rounded-xl text-xs font-extrabold text-slate-600 hover:text-violet-700 hover:bg-violet-50 transition-all"
+                className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100/70 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               >
-                Sign In
+                Sign in
               </Link>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link
-                  to="/signup"
-                  className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-violet-600 via-purple-500 to-pink-500 hover:from-violet-700 hover:to-pink-600 shadow-md shadow-violet-500/25 transition-all flex items-center gap-1.5"
-                >
-                  <Rocket className="w-3.5 h-3.5" />
-                  <span>Start Learning!</span>
-                </Link>
-              </motion.div>
+              <Link
+                to="/curriculum"
+                className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-600/25 transition-all flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 active:scale-95"
+              >
+                <span>Start Learning</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
           )}
 
-          {/* Mobile Menu Toggle Button */}
-          <motion.button
-            whileTap={{ scale: 0.9 }}
+          {/* Mobile Menu Trigger */}
+          <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle navigation menu"
-            className="lg:hidden p-2 sm:p-2.5 rounded-xl text-violet-600 hover:bg-violet-50 border-2 border-violet-200 shrink-0"
+            aria-expanded={mobileMenuOpen}
+            className="md:hidden p-2 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </motion.button>
+          </button>
         </div>
       </div>
 
@@ -267,118 +600,225 @@ const Navbar = () => {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="lg:hidden border-t-2 border-violet-100 bg-white/98 backdrop-blur-2xl px-4 pt-3 pb-6 max-h-[calc(100vh-70px)] overflow-y-auto space-y-3.5 shadow-2xl"
+            transition={{ duration: 0.22, ease: 'easeInOut' }}
+            className="md:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-6 max-h-[calc(100vh-68px)] overflow-y-auto space-y-4 shadow-xl"
           >
-            {/* User Info inside Mobile Drawer if logged in */}
+            {/* User card if logged in */}
             {currentUser && (
-              <div className="p-3 rounded-2xl bg-gradient-to-r from-violet-50 via-purple-50 to-pink-50 border border-violet-100 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-pink-500 text-white flex items-center justify-center font-extrabold text-sm uppercase shadow-sm shrink-0">
-                    {currentUser.name ? currentUser.name.charAt(0) : '🌟'}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-extrabold text-slate-800 truncate">
-                      {currentUser.name || 'Learner'}
-                    </p>
-                    <p className="text-[11px] text-slate-500 truncate">{currentUser.email}</p>
-                  </div>
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-slate-900">{currentUser.name || 'Learner'}</p>
+                  <p className="text-[11px] text-slate-500 truncate">{currentUser.email}</p>
                 </div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-violet-200 text-violet-800 uppercase shrink-0">
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800 uppercase">
                   {role || 'USER'}
                 </span>
               </div>
             )}
 
-            <nav className="space-y-1">
-              {NAV_LINKS.map((link, idx) => {
-                const isActive = location.pathname === link.to;
-                return (
-                  <motion.div
-                    key={link.to}
-                    initial={{ x: -10, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: idx * 0.04 }}
-                  >
-                    <Link
-                      to={link.to}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-extrabold transition-all ${
-                        isActive
-                          ? 'text-violet-700 bg-violet-100/90 shadow-sm border border-violet-200'
-                          : 'text-slate-700 hover:bg-violet-50 border border-transparent'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-lg">{link.emoji}</span>
-                        <span>{link.label}</span>
-                      </div>
-                      {isActive && (
-                        <span className="w-2 h-2 rounded-full bg-violet-600" />
-                      )}
-                    </Link>
-                  </motion.div>
-                );
-              })}
-            </nav>
-
-            {isSuperAdmin && (
-              <div className="pt-2 border-t border-violet-100">
-                <Link
-                  to="/dashboard/admin/overview"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-violet-600 to-purple-600 shadow-md"
-                >
-                  <LayoutDashboard className="w-4 h-4 text-amber-300" />
-                  <span>Super Admin Panel</span>
-                </Link>
-              </div>
-            )}
-
-            {isStaff && (
-              <div className="pt-2 border-t border-violet-100">
-                <Link
-                  to="/dashboard/staff/overview"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-teal-500 to-emerald-500 shadow-md"
-                >
-                  <LayoutDashboard className="w-4 h-4 text-emerald-200" />
-                  <span>Staff Editorial Portal</span>
-                </Link>
-              </div>
-            )}
-
-            {/* Bottom Actions inside Drawer */}
-            {currentUser ? (
+            {/* Mobile Tab Selectors for Groups */}
+            <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-xl">
               <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  handleLogout();
-                }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors"
+                onClick={() => setMobileSection('learn')}
+                className={`py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  mobileSection === 'learn' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600'
+                }`}
               >
-                <LogOut className="w-4 h-4" />
-                <span>Tschüss! Sign Out</span>
+                Learn
               </button>
-            ) : (
-              <div className="pt-2 border-t border-violet-100 space-y-2">
-                <Link
-                  to="/signup"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-violet-600 via-purple-500 to-pink-500 shadow-md shadow-violet-500/25"
+              <button
+                onClick={() => setMobileSection('practice')}
+                className={`py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  mobileSection === 'practice' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600'
+                }`}
+              >
+                Practice
+              </button>
+              <button
+                onClick={() => setMobileSection('resources')}
+                className={`py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  mobileSection === 'resources' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600'
+                }`}
+              >
+                Resources
+              </button>
+            </div>
+
+            {/* Content for selected section */}
+            <div className="space-y-1">
+              {mobileSection === 'learn' && (
+                <>
+                  <Link
+                    to="/curriculum"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 p-2.5 rounded-xl text-sm font-semibold text-slate-800 hover:bg-slate-50 border border-slate-100"
+                  >
+                    <Compass className="w-4 h-4 text-indigo-600" />
+                    <div className="flex-1">
+                      <p className="text-xs font-bold">Guided Learning Worlds</p>
+                      <p className="text-[11px] text-slate-500">60 days per level (A1–C2)</p>
+                    </div>
+                  </Link>
+
+                  <Link
+                    to="/grammar"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 p-2.5 rounded-xl text-sm font-semibold text-slate-800 hover:bg-slate-50 border border-slate-100"
+                  >
+                    <BookOpen className="w-4 h-4 text-emerald-600" />
+                    <div className="flex-1">
+                      <p className="text-xs font-bold">Grammar Library</p>
+                      <p className="text-[11px] text-slate-500">Rules & conjugations</p>
+                    </div>
+                  </Link>
+
+                  <Link
+                    to="/vocabulary"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 p-2.5 rounded-xl text-sm font-semibold text-slate-800 hover:bg-slate-50 border border-slate-100"
+                  >
+                    <Sparkles className="w-4 h-4 text-amber-600" />
+                    <div className="flex-1">
+                      <p className="text-xs font-bold">Vocabulary Flashcards</p>
+                      <p className="text-[11px] text-slate-500">Visual cards with audio</p>
+                    </div>
+                  </Link>
+
+                  <div className="pt-2">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 px-1">
+                      Quick Level Jump
+                    </p>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {CEFR_LEVEL_SHORTCUTS.map((item) => (
+                        <Link
+                          key={item.level}
+                          to={item.to}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="px-2 py-1.5 rounded-lg border border-slate-100 bg-slate-50/70 text-center"
+                        >
+                          <span className={`text-[10px] font-extrabold px-1 py-0.5 rounded ${item.color}`}>
+                            {item.level}
+                          </span>
+                          <span className="block text-[10px] font-semibold text-slate-600 truncate mt-0.5">
+                            {item.name}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {mobileSection === 'practice' && (
+                <>
+                  <Link
+                    to="/quizzes"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 p-2.5 rounded-xl text-sm font-semibold text-slate-800 hover:bg-slate-50 border border-slate-100"
+                  >
+                    <HelpCircle className="w-4 h-4 text-pink-600" />
+                    <div>
+                      <p className="text-xs font-bold">Quizzes Arena</p>
+                      <p className="text-[11px] text-slate-500">Articles & sentence drills</p>
+                    </div>
+                  </Link>
+
+                  <Link
+                    to="/reading"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 p-2.5 rounded-xl text-sm font-semibold text-slate-800 hover:bg-slate-50 border border-slate-100"
+                  >
+                    <FileText className="w-4 h-4 text-blue-600" />
+                    <div>
+                      <p className="text-xs font-bold">Reading Stories</p>
+                      <p className="text-[11px] text-slate-500">Graded German texts</p>
+                    </div>
+                  </Link>
+
+                  <Link
+                    to="/listening"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 p-2.5 rounded-xl text-sm font-semibold text-slate-800 hover:bg-slate-50 border border-slate-100"
+                  >
+                    <Headphones className="w-4 h-4 text-teal-600" />
+                    <div>
+                      <p className="text-xs font-bold">Listening Labs</p>
+                      <p className="text-[11px] text-slate-500">Dialogue audio & dictation</p>
+                    </div>
+                  </Link>
+                </>
+              )}
+
+              {mobileSection === 'resources' && (
+                <>
+                  <Link
+                    to="/blogs"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2.5 p-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50"
+                  >
+                    <span>📰</span>
+                    <span>German Learning Guides & Blog</span>
+                  </Link>
+                  <Link
+                    to="/faq"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2.5 p-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50"
+                  >
+                    <span>❓</span>
+                    <span>Frequently Asked Questions</span>
+                  </Link>
+                  <Link
+                    to="/about-us"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2.5 p-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50"
+                  >
+                    <span>🏛️</span>
+                    <span>About LingoVest</span>
+                  </Link>
+                  <Link
+                    to="/support"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2.5 p-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50"
+                  >
+                    <span>💬</span>
+                    <span>Learner Support</span>
+                  </Link>
+                </>
+              )}
+            </div>
+
+            {/* Mobile Actions */}
+            <div className="pt-2 border-t border-slate-100 space-y-2">
+              <Link
+                to="/curriculum"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm"
+              >
+                <span>Start Learning Now</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+
+              {currentUser ? (
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition-colors"
                 >
-                  <Rocket className="w-3.5 h-3.5" />
-                  <span>Start Learning for Free! 🚀</span>
-                </Link>
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out</span>
+                </button>
+              ) : (
                 <Link
                   to="/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold text-slate-700 bg-violet-50 hover:bg-violet-100 border border-violet-200"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
                 >
-                  <span>Sign In to Account 🔑</span>
+                  <span>Sign In</span>
                 </Link>
-              </div>
-            )}
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
