@@ -1172,7 +1172,7 @@ export function getVocabularyImage(vocab: {
 
   // Strip articles (der/die/das/ein/eine) and non-word characters
   const cleanWord = rawWord
-    .replace(/^(der|die|das|dem|den|des|ein|eine|einen|einem|eines)s+/i, '')
+    .replace(/^(der|die|das|dem|den|des|ein|eine|einen|einem|eines)\s+/i, '')
     .replace(/[.,/#!$%^&*;:{}=\-_~`()]/g, '')
     .trim();
 
@@ -1202,7 +1202,7 @@ export function getVocabularyImage(vocab: {
   // 5. Match by English meaning words (e.g. "coffee", "apple", "bread")
   const rawMeaning = (vocab.meaningEn || '').toLowerCase();
   const meaningTokens = rawMeaning
-    .replace(/^(the|a|an|to)s+/i, '')
+    .replace(/^(the|a|an|to)\s+/i, '')
     .split(/[\s,/;()]+/)
     .map((t) => t.trim())
     .filter(Boolean);
@@ -1222,7 +1222,7 @@ export function getVocabularyImage(vocab: {
 
   // 6. Dynamic Generative Photo Resolver for ANY arbitrary newly added word
   const cleanPromptWord = (vocab.meaningEn || cleanWord || '')
-    .replace(/^(the|a|an|to)s+/i, '')
+    .replace(/^(the|a|an|to)\s+/i, '')
     .replace(/[^a-zA-Z0-9\s]/g, '')
     .trim();
 
